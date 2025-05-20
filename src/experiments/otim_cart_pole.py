@@ -1,13 +1,11 @@
 """
-Análise de otimização para CartPoleV-1 para o TCC
+Author: Brenda Silva Machado.
 
-Ação é determinada pela seguinte função: sign(param1_observation[2]+param2_observation[3])
+Env: CartPoleV-1.
+
+Action function: sign(param1_observation[2]+param2_observation[3]).
 
 Observation: cart position, cart velocity, pole angle, pole angular velocity
-
-Ação é discreta, 0 ou 1, a função sign vai dar a ação automaticamente.
-
-Variar os parâmetros (param1 e param2) de -2 a 2 de 0.025 em 0.025.
 """
 
 import gymnasium as gym
