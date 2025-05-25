@@ -3,7 +3,7 @@ venv/bin/activate: requirements.txt
 	 ./venv/bin/pip install -r requirements.txt	
 
 run: venv/bin/activate
-	 ./venv/bin/python3 src/otim_cart_pole.py
+	 ./venv/bin/python3 src/main.py
 
 clean:
 	 rm -rf __pycache__
