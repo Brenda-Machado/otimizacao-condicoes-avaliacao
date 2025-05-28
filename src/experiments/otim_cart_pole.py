@@ -9,9 +9,10 @@ Observation: cart position, cart velocity, pole angle, pole angular velocity
 
 Possible otimizations:
     * Weights of the action function;
+    * All possible combinations of the Pole Angle and the Pole Velocity;
+    *
 
 Otim TO-DO:
-    * Todas as possíveis combinações condições iniciais;
     * Variação da duração do episódio de avaliação;
     * Variação do ruído a ser adicionado ao motor do agente;
     * Variação do intervalo das condições iniciais;
@@ -47,46 +48,81 @@ def run_episode(env, param1, param2, max_steps=500, noise_range=None, custom_sta
             break
     return total_reward
 
-def experimento_controle(param1, param2, step=0.25):
-    results = {}
+def run_episode_exp(env, param1, param2, max_steps=500, noise_range=None, custom_state=None):
+    obs, _ = env.reset()
+    
+    if custom_state is not None:
+        env.unwrapped.state = np.array(custom_state)
+
+    states_rewards = []
+
+    for i in range(max_steps):
+        action = get_action(obs, param1, param2)
+        if noise_range:
+            action = np.clip(action + np.random.uniform(*noise_range), 0, 1)
+            action = int(round(action))
+        obs, reward, terminated, truncated, _ = env.step(action)
+
+        ang = obs[2]
+        ang_vel = obs[3]
+        states_rewards.append((ang, ang_vel, reward))
+
+        if terminated or truncated:
+            break
+
+    return states_rewards
+
+
+def experimento_controle(param1, param2, step=0.025):
+    results = []
     env = gym.make('CartPole-v1')
-    pos = np.arange(-2.4, 2.4 + step, step)
-    vel = np.arange(-3.0, 3.0 + step, step)
-    ang = np.arange(-0.21, 0.21 + step, step)
-    ang_vel = np.arange(-3.0, 3.0 + step, step)
+    pos = 0
+    vel = 0
+    ang = np.linspace(-0.2, 0.2, num=int((0.2 - (-0.2)) / step) + 1)
+    ang_vel = np.linspace(-3, 3, num=int((3 - (-3)) / step) + 1)
 
     rewards = []
-    for p in tqdm(pos, desc="pos"):
-        for v in vel:
-            for a in ang:
-                for av in ang_vel:
-                    state = [p, v, a, av]
-                    reward = run_episode(env, param1, param2, custom_state=state)
-                    rewards.append(reward)
-                    results[p,v,a,av] = reward
+
+    for a in tqdm(ang, desc="ângulo"):
+        for av in ang_vel:
+            state = [pos, vel, a, av]
+            reward = run_episode(env, param1, param2, custom_state=state)
+            rewards.append(reward)
+            results.append((a, av, reward))
     env.close()
 
-    best_state = max(results, key=results.get)
-    best_reward = results[best_state]
+    results = np.array(results)
+    best_index = np.argmax(results[:, 2])
+    best_params = results[best_index]
 
-    plot_results_controle(results)
+    print(f"\nMelhores parâmetros encontrados:")
+    print(f"ângulo = {best_params[0]}, velocidade angular = {best_params[1]} --> recompensa média = {best_params[2]}")
 
-    # print("\nMelhores condições iniciais encontradas:")
-    # print(f"p = {best_state[0]}, v = {best_state[1]}, a = {best_state[2]}, av = {best_state[3]} --> recompensa = {best_reward}")
+    return results, best_index, best_params
 
-    return results, best_state, best_reward
-
-def experimento_1(param1, param2, n_episodios=10):
+def experimento_1(param1, param2, n_episodios):
     env = gym.make('CartPole-v1')
-    rewards = [run_episode(env, param1, param2) for _ in range(n_episodios)]
-    env.close()
-    return np.mean(rewards)
+    results = [] 
 
-def experimento_2(param1, param2, duration=500):
-    env = gym.make('CartPole-v1')
-    reward = run_episode(env, param1, param2, max_steps=duration)
+    for _ in tqdm(range(n_episodios), desc="Episódios de avaliação"):
+        episode_data = run_episode_exp(env, param1, param2) 
+        results.extend(episode_data)
+
     env.close()
-    return reward
+    results = np.array(results)
+    return results
+
+def experimento_2(param1, param2, duration):
+    env = gym.make('CartPole-v1')
+    results = []
+
+    for _ in tqdm(range(10), desc="Episódios de avaliação"):
+        episode_data = run_episode_exp(env, param1, param2, max_steps=duration)
+        results.extend(episode_data)
+
+    env.close()
+    results = np.array(results)
+    return results
 
 def experimento_3(param1, param2, noise_range=(-0.05, 0.05)):
     env = gym.make('CartPole-v1')
@@ -186,24 +222,20 @@ def plot_results_otim_weights(results):
 
     plt.show()
 
-def plot_results_controle(results):
-    xs, ys, zs, cs = [], [], [], []
-
-    for (p, v, a, av), reward in results.items():
-        xs.append(p)     # eixo X: posição
-        ys.append(a)     # eixo Y: ângulo
-        zs.append(av)    # eixo Z: velocidade angular
-        cs.append(reward)  # cor: recompensa
+def plot_results(results):
+    X = results[:, 0] # eixo X: ângulo
+    Y = results[:, 1] # eixo Y: velocidade angular
+    Z = results[:, 2] # eixo Z: Fitness     
 
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
+    ax.plot_trisurf(X, Y, Z, cmap='viridis')
 
-    sc = ax.scatter(xs, ys, zs, c=cs, cmap='viridis', marker='o')
-    plt.colorbar(sc, ax=ax, label='Recompensa')
+    ax.set_xlabel('Ângulo (a)')
+    ax.set_ylabel('Velocidade Angular (av)')
+    ax.set_zlabel('Recompensa Média')
 
-    ax.set_xlabel('Posição (p)')
-    ax.set_ylabel('Ângulo (a)')
-    ax.set_zlabel('Velocidade Angular (av)')
-    ax.set_title('Recompensa em função do Estado Inicial no CartPole')
+    ax.set_xlim(-0.2, 0.2)
+    ax.set_ylim(-3, 3)
 
     plt.show()
