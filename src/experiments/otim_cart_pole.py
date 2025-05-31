@@ -48,7 +48,7 @@ def run_episode(env, param1, param2, max_steps=500, noise_range=None, custom_sta
             break
     return total_reward
 
-def run_episode_exp(env, param1, param2, max_steps=500, noise_range=None, custom_state=None):
+def run_episode_exp(env, param1, param2, max_steps=500, noise_range=None, custom_state=None, metodo=None):
     obs, _ = env.reset()
     
     if custom_state is not None:
@@ -69,7 +69,7 @@ def run_episode_exp(env, param1, param2, max_steps=500, noise_range=None, custom
 
         if terminated or truncated:
             break
-
+    
     return states_rewards
 
 
@@ -126,30 +126,38 @@ def experimento_2(param1, param2, duration):
 
 def experimento_3(param1, param2, noise_range=(-0.05, 0.05)):
     env = gym.make('CartPole-v1')
-    reward = run_episode(env, param1, param2, noise_range=noise_range)
+    results = []
+    for _ in tqdm(range(10), desc="Episódios de avaliação"):
+        episode_data = run_episode_exp(env, param1, param2, noise_range=noise_range)
+        results.extend(episode_data)
+    
     env.close()
-    return reward
+    results = np.array(results)
+    return results
 
-def experimento_4(param1, param2, ranges=[(-2.4, 2.4), (-3.0, 3.0), (-0.21, 0.21), (-3.0, 3.0)]):
+def experimento_4(param1, param2, ranges=[(0, 0), (0, 0), (-0.2, 0.2), (-3.0, 3.0)]):
     env = gym.make('CartPole-v1')
     state = [np.random.uniform(low, high) for low, high in ranges]
-    reward = run_episode(env, param1, param2, custom_state=state)
+    results = []
+    for _ in tqdm(range(10), desc="Episódios de avaliação"):
+        episode_data = run_episode_exp(env, param1, param2, custom_state=state)
+        results.extend(episode_data)
+    
     env.close()
-    return reward
+    results = np.array(results)
+    return results
 
-def experimento_5(param1, param2, n_episodios=10, metodo='media'):
+def experimento_5(param1, param2, metodo='media'):
     env = gym.make('CartPole-v1')
-    rewards = [run_episode(env, param1, param2) for _ in range(n_episodios)]
-    env.close()
+    results = []
+    
+    for _ in tqdm(range(10), desc="Episódios de avaliação"):
+        episode_data = run_episode_exp(env, param1, param2, metodo=metodo)
+        results.extend(episode_data)
 
-    if metodo == 'media':
-        return np.mean(rewards)
-    elif metodo == 'max':
-        return np.max(rewards)
-    elif metodo == 'min':
-        return np.min(rewards)
-    else:
-        raise ValueError("Método deve ser 'media', 'max' ou 'min'")
+    env.close()
+    results = np.array(results)
+    return results
 
 def experimento_6(param1, param2, n_episodios=10, pesos=(0.3, 0.4, 0.3)):
     env = gym.make('CartPole-v1')
