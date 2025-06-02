@@ -7,17 +7,6 @@ Action function: sign(param1_observation[2]+param2_observation[3]).
 
 Observation: cart position, cart velocity, pole angle, pole angular velocity
 
-Possible otimizations:
-    * Weights of the action function;
-    * All possible combinations of the Pole Angle and the Pole Velocity;
-    *
-
-Otim TO-DO:
-    * Variação da duração do episódio de avaliação;
-    * Variação do ruído a ser adicionado ao motor do agente;
-    * Variação do intervalo das condições iniciais;
-    * Avaliação do peso de cada episódio avaliativo;
-    * Modificação do peso das componentes de fitness.
 """
 
 import gymnasium as gym
@@ -25,6 +14,10 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+from policy import Policy
+import argparse
+from tqdm import tqdm
 
 def get_action(obs, param1, param2):
     val = param1 * obs[2] + param2 * obs[3]
@@ -72,8 +65,33 @@ def run_episode_exp(env, param1, param2, max_steps=500, noise_range=None, custom
     
     return states_rewards
 
+def run_episode_exp_pesos(env, param1, param2, max_steps=500, noise_range=None, custom_state=None, metodo=None):
+    obs, _ = env.reset()
+    
+    if custom_state is not None:
+        env.unwrapped.state = np.array(custom_state)
 
-def experimento_controle(param1, param2, step=0.025):
+    states_rewards = []
+
+    for i in range(max_steps):
+        action = get_action(obs, param1, param2)
+        if noise_range:
+            action = np.clip(action + np.random.uniform(*noise_range), 0, 1)
+            action = int(round(action))
+        obs, reward, terminated, truncated, _ = env.step(action)
+
+        ang = obs[2]
+        ang_vel = obs[3]
+        states_rewards.append((ang, ang_vel, reward))
+
+        if terminated or truncated:
+            break
+    
+    return states_rewards
+
+def experimento_controle():
+    """Variação do numero de episódios"""
+    step = 0.025
     results = []
     env = gym.make('CartPole-v1')
     pos = 0
@@ -86,7 +104,7 @@ def experimento_controle(param1, param2, step=0.025):
     for a in tqdm(ang, desc="ângulo"):
         for av in ang_vel:
             state = [pos, vel, a, av]
-            reward = run_episode(env, param1, param2, custom_state=state)
+            reward = run_episode(env, 0.25, 0.25, custom_state=state)
             rewards.append(reward)
             results.append((a, av, reward))
     env.close()
@@ -100,66 +118,83 @@ def experimento_controle(param1, param2, step=0.025):
 
     return results, best_index, best_params
 
-def experimento_1(param1, param2, n_episodios):
-    env = gym.make('CartPole-v1')
-    results = [] 
+def experimento_1_n_episodios():
+    """Variação do numero de episódios"""
+    env = gym.make("CartPole-v1")
+    policy = Policy()
+    episodios = [2, 5, 10, 15, 20,50]
+    state_reward = []
 
-    for _ in tqdm(range(n_episodios), desc="Episódios de avaliação"):
-        episode_data = run_episode_exp(env, param1, param2) 
-        results.extend(episode_data)
+    for ep in episodios:
+        print(f"Experimento 1: n_episodes = {ep}")
+        state_reward = []
+        for i in range(ep):
+            recompensa, steps, episode_data = policy.rollout(env=env, ntrials=1)
+            state_reward.extend(episode_data)
+            print(f"Episódio {i+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
+            
+        env.close()
+        results = np.array(state_reward)
+        np.save(f'exp_1_states_rewards_ep_{ep}.npy', state_reward)
+        plot_results(results=results)
 
-    env.close()
-    results = np.array(results)
-    return results
+def experimento_2_duracao():
+    """Variação da duração do episódio."""
+    env = gym.make("CartPole-v1")
+    policy = Policy(env, ini_file, seed, test=0)
+    policy.maxsteps = duracao
+    resultados = []
 
-def experimento_2(param1, param2, duration):
-    env = gym.make('CartPole-v1')
-    results = []
-
-    for _ in tqdm(range(10), desc="Episódios de avaliação"):
-        episode_data = run_episode_exp(env, param1, param2, max_steps=duration)
-        results.extend(episode_data)
-
-    env.close()
-    results = np.array(results)
-    return results
-
-def experimento_3(param1, param2, noise_range=(-0.05, 0.05)):
-    env = gym.make('CartPole-v1')
-    results = []
-    for _ in tqdm(range(10), desc="Episódios de avaliação"):
-        episode_data = run_episode_exp(env, param1, param2, noise_range=noise_range)
-        results.extend(episode_data)
-    
-    env.close()
-    results = np.array(results)
-    return results
-
-def experimento_4(param1, param2, ranges=[(0, 0), (0, 0), (-0.2, 0.2), (-3.0, 3.0)]):
-    env = gym.make('CartPole-v1')
-    state = [np.random.uniform(low, high) for low, high in ranges]
-    results = []
-    for _ in tqdm(range(10), desc="Episódios de avaliação"):
-        episode_data = run_episode_exp(env, param1, param2, custom_state=state)
-        results.extend(episode_data)
-    
-    env.close()
-    results = np.array(results)
-    return results
-
-def experimento_5(param1, param2, metodo='media'):
-    env = gym.make('CartPole-v1')
-    results = []
-    
-    for _ in tqdm(range(10), desc="Episódios de avaliação"):
-        episode_data = run_episode_exp(env, param1, param2, metodo=metodo)
-        results.extend(episode_data)
+    for i in tqdm(range(10), desc="Experimento 2"):
+        recompensa, steps, traj = policy.rollout(ntrials=1)
+        resultados.append((i, recompensa, steps))
 
     env.close()
-    results = np.array(results)
-    return results
+    return np.array(resultados)
 
-def experimento_6(param1, param2, n_episodios=10, pesos=(0.3, 0.4, 0.3)):
+def experimento_3_ruido():
+    """Variação do ruído na ação."""
+    env = gym.make("CartPole-v1")
+    policy = Policy(env, ini_file, seed, test=0)
+    policy.action_noise = 1
+    policy.action_noise_range = noise_range
+
+    resultados = []
+    for i in tqdm(range(10), desc="Experimento 3"):
+        recompensa, steps, traj = policy.rollout(ntrials=1)
+        resultados.append((i, recompensa, steps))
+
+    env.close()
+    return np.array(resultados)
+
+def experimento_4_condicoes():
+    """Variação das condições iniciais."""
+    env = gym.make("CartPole-v1")
+    policy = Policy(env, ini_file, seed, test=0)
+    resultados = []
+
+    for i in tqdm(range(10), desc="Experimento 4"):
+        custom_state = np.array([np.random.uniform(low, high) for (low, high) in ranges])
+        env.reset()
+        env.unwrapped.state = custom_state
+        recompensa, steps, traj = policy.rollout(ntrials=1)
+        resultados.append((i, *custom_state, recompensa, steps))
+
+    env.close()
+    return np.array(resultados)
+
+def experimento_5_fitness():
+    """Fitness com pesos sobre min, mean e max."""
+    env = gym.make("CartPole-v1")
+    policy = Policy(env, ini_file, seed, test=0)
+    recompensas = [policy.rollout(ntrials=1)[0] for _ in range(10)]
+    env.close()
+
+    r_min, r_mean, r_max = np.min(recompensas), np.mean(recompensas), np.max(recompensas)
+    w_min, w_mean, w_max = pesos
+    return w_min * r_min + w_mean * r_mean + w_max * r_max
+
+def experimento_6_pesos():
     env = gym.make('CartPole-v1')
     rewards = [run_episode(env, param1, param2) for _ in range(n_episodios)]
     env.close()
@@ -213,22 +248,6 @@ def otim_weights_action_func(param_range):
 
     return results, best_index, best_params
 
-def plot_results_otim_weights(results):
-
-    X = results[:, 0]
-    Y = results[:, 1]
-    Z = results[:, 2]
-
-    fig = plt.figure(figsize=(12, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(X, Y, Z, cmap='viridis')
-
-    ax.set_xlabel('param1 (peso pole angle)')
-    ax.set_ylabel('param2 (peso angular velocity)')
-    ax.set_zlabel('Recompensa Média')
-    ax.set_title('Otimização de Parâmetros para CartPole-v1')
-
-    plt.show()
 
 def plot_results(results):
     X = results[:, 0] # eixo X: ângulo
@@ -243,7 +262,18 @@ def plot_results(results):
     ax.set_ylabel('Velocidade Angular (av)')
     ax.set_zlabel('Recompensa Média')
 
-    ax.set_xlim(-0.2, 0.2)
-    ax.set_ylim(-3, 3)
+    # ax.set_xlim(-0.2, 0.2)
+    # ax.set_ylim(-3, 3)
 
     plt.show()
+
+def run_all_experimentos():
+    experimento_1_n_episodios()
+    # experimento_2_duracao()
+    # experimento_3_ruido()
+    # experimento_4_condicoes()
+    # experimento_5_fitness()
+    # experimento_6_pesos()
+
+if __name__ == "__main__":
+    run_all_experimentos()

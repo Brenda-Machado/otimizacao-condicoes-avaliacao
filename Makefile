@@ -5,6 +5,9 @@ venv/bin/activate: requirements.txt
 run: venv/bin/activate
 	 ./venv/bin/python3 src/main.py
 
+cp: venv/bin/activate
+	 ./venv/bin/python3 src/experiments/otim_cart_pole.py
+
 clean:
 	 rm -rf __pycache__
 	 rm -rf venv
