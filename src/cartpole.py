@@ -205,6 +205,30 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         if self.render_mode == "human":
             self.render()
         return np.array(self.state, dtype=np.float32), {}
+    
+    def reset_custom(
+        self,
+        *,
+        seed: Optional[int] = None,
+        options: Optional[dict] = None,
+        custom_bounds
+    ):
+        super().reset(seed=seed)
+        # Note that if you use custom reset bounds, it may lead to out-of-bound
+        # state/observations.
+        bounds = custom_bounds
+
+        # Separar em vetores low e high
+        low = np.array([b[0] for b in bounds])
+        high = np.array([b[1] for b in bounds])
+
+        self.state = self.np_random.uniform(low=low, high=high)
+
+        self.steps_beyond_terminated = None
+
+        if self.render_mode == "human":
+            self.render()
+        return np.array(self.state, dtype=np.float32), {}
 
     def render(self):
         if self.render_mode is None:

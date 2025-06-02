@@ -7,6 +7,14 @@ Action function: sign(param1_observation[2]+param2_observation[3]).
 
 Observation: cart position, cart velocity, pole angle, pole angular velocity
 
+Default parameters:
+
+episodes = 10
+maxsteps = 500
+noise = ?
+fitness = mean
+interval_initial = [-0.05, 0.05]
+
 """
 
 import gymnasium as gym
@@ -16,8 +24,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from policy import Policy
-import argparse
 from tqdm import tqdm
+import os
+from cartpole import CartPoleEnv
 
 def get_action(obs, param1, param2):
     val = param1 * obs[2] + param2 * obs[3]
@@ -135,53 +144,76 @@ def experimento_1_n_episodios():
             
         env.close()
         results = np.array(state_reward)
-        np.save(f'exp_1_states_rewards_ep_{ep}.npy', state_reward)
-        plot_results(results=results)
+
+        path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/cartpole/exp_1/states_rewards_ep_{ep}.npy')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        np.save(path, state_reward)
+
+        plot_results(results=results, exp='exp_1', name=f'ep_{ep}')
+        plot_results_umbounded(results=results, exp='exp_1', name=f'ep_{ep}_unb')
 
 def experimento_2_duracao():
     """Variação da duração do episódio."""
     env = gym.make("CartPole-v1")
-    policy = Policy(env, ini_file, seed, test=0)
-    policy.maxsteps = duracao
-    resultados = []
+    policy = Policy()
+    duracao = [50, 100, 200, 300, 400, 500]
+    state_reward = []
 
-    for i in tqdm(range(10), desc="Experimento 2"):
-        recompensa, steps, traj = policy.rollout(ntrials=1)
-        resultados.append((i, recompensa, steps))
+    for d in duracao:
+        print(f"Experimento 2: maxsteps = {d}")
+        state_reward = []
 
-    env.close()
-    return np.array(resultados)
+        for e in range(10):
+            recompensa, steps, episode_data = policy.rollout(env=env, custom_maxsteps=d)
+            state_reward.extend(episode_data)
+
+            print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
+                
+        env.close()
+        results = np.array(state_reward)
+
+        path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/cartpole/exp_2/states_rewards_d_{d}.npy')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        np.save(path, state_reward)
+
+        name = 'mstep_' + str(d)
+        name_unb = 'mstep_' + str(d) + '_unb'
+
+        plot_results(results=results, exp='exp_2', name=name)
+        plot_results_umbounded(results=results, exp='exp_2', name=name_unb)
 
 def experimento_3_ruido():
     """Variação do ruído na ação."""
-    env = gym.make("CartPole-v1")
-    policy = Policy(env, ini_file, seed, test=0)
-    policy.action_noise = 1
-    policy.action_noise_range = noise_range
-
-    resultados = []
-    for i in tqdm(range(10), desc="Experimento 3"):
-        recompensa, steps, traj = policy.rollout(ntrials=1)
-        resultados.append((i, recompensa, steps))
-
-    env.close()
-    return np.array(resultados)
+    pass
 
 def experimento_4_condicoes():
     """Variação das condições iniciais."""
-    env = gym.make("CartPole-v1")
-    policy = Policy(env, ini_file, seed, test=0)
-    resultados = []
+    env = CartPoleEnv()
+    policy = Policy()
+    interval_ranges = [[(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-2.0, 2.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-1.0, 1.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-3.0, 3.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.15, 0.15), (-3.0, 3.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.1, 0.1), (-3.0, 3.0)]]
+    state_reward = []
 
-    for i in tqdm(range(10), desc="Experimento 4"):
-        custom_state = np.array([np.random.uniform(low, high) for (low, high) in ranges])
-        env.reset()
-        env.unwrapped.state = custom_state
-        recompensa, steps, traj = policy.rollout(ntrials=1)
-        resultados.append((i, *custom_state, recompensa, steps))
+    for r in interval_ranges:
+        for e in range(10):
+            recompensa, steps, episode_data = policy.rollout(env=env,custom_state=r)
+            state_reward.extend(episode_data)
 
-    env.close()
-    return np.array(resultados)
+            print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
+
+        env.close()
+        results = np.array(state_reward)
+
+        ranges = str(r[2][1]) + "_" + str((r[3][1]))
+
+        path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/cartpole/exp_4/states_rewards_r_{ranges}.npy')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        np.save(path, state_reward)
+
+        name = 'mstep_' + ranges
+        name_unb = 'mstep_' + ranges + '_unb'
+
+        plot_results(results=results, exp='exp_4', name=name)
+        plot_results_umbounded(results=results, exp='exp_4', name=name_unb)
 
 def experimento_5_fitness():
     """Fitness com pesos sobre min, mean e max."""
@@ -249,7 +281,7 @@ def otim_weights_action_func(param_range):
     return results, best_index, best_params
 
 
-def plot_results(results):
+def plot_results(results, exp, name):
     X = results[:, 0] # eixo X: ângulo
     Y = results[:, 1] # eixo Y: velocidade angular
     Z = results[:, 2] # eixo Z: Fitness     
@@ -262,16 +294,40 @@ def plot_results(results):
     ax.set_ylabel('Velocidade Angular (av)')
     ax.set_zlabel('Recompensa Média')
 
-    # ax.set_xlim(-0.2, 0.2)
-    # ax.set_ylim(-3, 3)
+    ax.set_xlim(-0.2, 0.2)
+    ax.set_ylim(-3, 3)
 
-    plt.show()
+    save_dir = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/plots/cartpole/{exp}')
+    os.makedirs(save_dir, exist_ok=True)
+
+    save_path = os.path.join(save_dir, f'{name}.png')
+    plt.savefig(save_path)
+
+def plot_results_umbounded(results, exp, name):
+    X = results[:, 0] # eixo X: ângulo
+    Y = results[:, 1] # eixo Y: velocidade angular
+    Z = results[:, 2] # eixo Z: Fitness     
+
+    fig = plt.figure(figsize=(12, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_trisurf(X, Y, Z, cmap='viridis')
+
+    ax.set_xlabel('Ângulo (a)')
+    ax.set_ylabel('Velocidade Angular (av)')
+    ax.set_zlabel('Recompensa Média')
+
+    save_dir = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/plots/cartpole/{exp}')
+    os.makedirs(save_dir, exist_ok=True)
+
+    save_path = os.path.join(save_dir, f'{name}.png')
+    plt.savefig(save_path)
+
 
 def run_all_experimentos():
-    experimento_1_n_episodios()
+    # experimento_1_n_episodios()
     # experimento_2_duracao()
     # experimento_3_ruido()
-    # experimento_4_condicoes()
+    experimento_4_condicoes()
     # experimento_5_fitness()
     # experimento_6_pesos()
 

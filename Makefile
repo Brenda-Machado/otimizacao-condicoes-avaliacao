@@ -6,7 +6,7 @@ run: venv/bin/activate
 	 ./venv/bin/python3 src/main.py
 
 cp: venv/bin/activate
-	 ./venv/bin/python3 src/experiments/otim_cart_pole.py
+	 ./venv/bin/python3 src/otim_cart_pole.py
 
 clean:
 	 rm -rf __pycache__
