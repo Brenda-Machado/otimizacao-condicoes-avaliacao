@@ -138,7 +138,7 @@ def experimento_1_n_episodios():
         print(f"Experimento 1: n_episodes = {ep}")
         state_reward = []
         for i in range(ep):
-            recompensa, steps, episode_data = policy.rollout(env=env, ntrials=1)
+            recompensa, steps, episode_data = policy.rollout_cp(env=env, ntrials=1)
             state_reward.extend(episode_data)
             print(f"Episódio {i+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
             
@@ -164,7 +164,7 @@ def experimento_2_duracao():
         state_reward = []
 
         for e in range(10):
-            recompensa, steps, episode_data = policy.rollout(env=env, custom_maxsteps=d)
+            recompensa, steps, episode_data = policy.rollout_cp(env=env, custom_maxsteps=d)
             state_reward.extend(episode_data)
 
             print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
@@ -191,11 +191,13 @@ def experimento_4_condicoes():
     env = CartPoleEnv()
     policy = Policy()
     interval_ranges = [[(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-2.0, 2.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-1.0, 1.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-3.0, 3.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.15, 0.15), (-3.0, 3.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.1, 0.1), (-3.0, 3.0)]]
-    state_reward = []
 
     for r in interval_ranges:
+        print(f"Experimento 4: ranges = {r}")
+        state_reward = []
+
         for e in range(10):
-            recompensa, steps, episode_data = policy.rollout(env=env,custom_state=r)
+            recompensa, steps, episode_data = policy.rollout_cp(env=env,custom_state=r)
             state_reward.extend(episode_data)
 
             print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
@@ -209,8 +211,8 @@ def experimento_4_condicoes():
         os.makedirs(os.path.dirname(path), exist_ok=True)
         np.save(path, state_reward)
 
-        name = 'mstep_' + ranges
-        name_unb = 'mstep_' + ranges + '_unb'
+        name = 'ranges_' + ranges
+        name_unb = 'ranges_' + ranges + '_unb'
 
         plot_results(results=results, exp='exp_4', name=name)
         plot_results_umbounded(results=results, exp='exp_4', name=name_unb)
@@ -218,13 +220,32 @@ def experimento_4_condicoes():
 def experimento_5_fitness():
     """Fitness com pesos sobre min, mean e max."""
     env = gym.make("CartPole-v1")
-    policy = Policy(env, ini_file, seed, test=0)
-    recompensas = [policy.rollout(ntrials=1)[0] for _ in range(10)]
-    env.close()
+    policy = Policy()
+    pesos = [()]
+    state_reward = []
 
-    r_min, r_mean, r_max = np.min(recompensas), np.mean(recompensas), np.max(recompensas)
-    w_min, w_mean, w_max = pesos
-    return w_min * r_min + w_mean * r_mean + w_max * r_max
+    for p in pesos:
+        print(f"Experimento 5: pesos = {p}")
+        state_reward = []
+
+        for e in range(10):
+            recompensa, steps, episode_data = policy.rollout(env=env, custom_maxsteps=d)
+            state_reward.extend(episode_data)
+
+            print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
+                
+        env.close()
+        results = np.array(state_reward)
+
+        path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/cartpole/exp_5/states_rewards_d_{p}.npy')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        np.save(path, state_reward)
+
+        name = 'pesos_' + str(p)
+        name_unb = 'pesos_' + str(p) + '_unb'
+
+        plot_results(results=results, exp='exp_5', name=name)
+        plot_results_umbounded(results=results, exp='exp_5', name=name_unb)
 
 def experimento_6_pesos():
     env = gym.make('CartPole-v1')

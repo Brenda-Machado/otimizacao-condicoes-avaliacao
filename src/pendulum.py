@@ -94,6 +94,7 @@ class PendulumEnv(gym.Env):
     
 
     def __init__(self, render_mode: Optional[str] = None, g=10.0):
+        # self.max_speed = 0.2 # 8
         self.max_speed = 8
         self.max_torque = 2.0
         self.dt = 0.05
@@ -119,25 +120,31 @@ class PendulumEnv(gym.Env):
         )
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 
-    def step(self, u):
+    def step(self, u=1, state_custom=None):
         th, thdot = self.state  # th := theta
+
+        if state_custom is not None:
+            th, thdot = state_custom
+            self.state = state_custom
+            costs = angle_normalize(th) ** 2 + 0.1 * thdot**2 + 0.001 * (u**2)
+            return self._get_obs(), -costs, False, False, {}
 
         g = self.g
         m = self.m
         l = self.l
         dt = self.dt
 
-        u = np.clip(u, -self.max_torque, self.max_torque)[0]
+        # u = np.clip(u, -self.max_torque, self.max_torque)[0]
         self.last_u = u  # for rendering
         costs = angle_normalize(th) ** 2 + 0.1 * thdot**2 + 0.001 * (u**2)
 
         newthdot = thdot + (3 * g / (2 * l) * np.sin(th) + 3.0 / (m * l**2) * u) * dt
         newthdot = np.clip(newthdot, -self.max_speed, self.max_speed)
         newth = th + newthdot * dt
+        # newth = np.clip(th + newthdot * dt, -3, 3)
+
 
         self.state = np.array([newth, newthdot])
-        print(f"State: {self.state}")
-        self.saved_states.append(self.state)
 
         if self.render_mode == "human":
             self.render()
@@ -161,8 +168,26 @@ class PendulumEnv(gym.Env):
 
         if self.render_mode == "human":
             self.render()
+        return self._get_obs(), {}
+    
+    def reset_custom(self, *, seed: Optional[int] = None, options: Optional[dict] = None, custom_bounds):
+        super().reset(seed=seed)
+        if options is None:
+            high = np.array([DEFAULT_X, DEFAULT_Y])
+        else:
+            # Note that if you use custom reset bounds, it may lead to out-of-bound
+            # state/observations.
+            x = options.get("x_init") if "x_init" in options else DEFAULT_X
+            y = options.get("y_init") if "y_init" in options else DEFAULT_Y
+            x = utils.verify_number_and_cast(x)
+            y = utils.verify_number_and_cast(y)
+            high = np.array([x, y])
+        low = -high  # We enforce symmetric limits.
+        self.state = self.np_random.uniform(low=low, high=high)
+        self.last_u = None
 
-        np.save('states_pendulum_exp_1.npy', np.array(self.saved_states))
+        if self.render_mode == "human":
+            self.render()
         return self._get_obs(), {}
 
     def _get_obs(self):

@@ -8,6 +8,9 @@ run: venv/bin/activate
 cp: venv/bin/activate
 	 ./venv/bin/python3 src/otim_cart_pole.py
 
+pen:venv/bin/activate
+	 ./venv/bin/python3 src/otim_pendulum.py
+
 clean:
 	 rm -rf __pycache__
 	 rm -rf venv
