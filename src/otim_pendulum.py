@@ -28,15 +28,16 @@ from tqdm import tqdm
 import os
 from pendulum import PendulumEnv
 
-def run_episode(env, param1, param2, max_steps=500, noise_range=None, custom_state=None):
+def run_episode(env, max_steps=500, noise_range=None, custom_state=None):
     obs, _ = env.reset()
     total_reward = 0
-    
-    for i in range(max_steps):
-        obs, reward, terminated, truncated, _ = env.step(custom_state)
-        total_reward += reward
-        if terminated or truncated:
-            break
+
+    for i in range(10):
+        for i in range(max_steps):
+            obs, reward, terminated, truncated, _ = env.step(custom_state)
+            total_reward += reward
+            if terminated or truncated:
+                break
     return total_reward
 
 def experimento_controle():
@@ -44,17 +45,19 @@ def experimento_controle():
     step = 0.025
     results = []
     env = PendulumEnv()
+    policy = Policy(input_size=3)
     theta = np.linspace(-3, 3, num=int((3 - (-3)) / step) + 1)
     theta_dot = np.linspace(-0.2, 0.2, num=int((0.2 - (-0.2)) / step) + 1)
 
     rewards = []
 
-    for t in tqdm(theta, desc="Theta"):
+    for t in tqdm(theta, desc="Exp Controle"):
         for td in theta_dot:
-            state = np.array([t,td])
-            reward = run_episode(env, 0.25, 0.25, custom_state=state)
-            rewards.append(reward)
-            results.append((t, td, reward))
+            for i in range(10):
+                state = np.array([t,td])
+                reward, steps, episode_data = policy.rollout(env=env, ntrials=1,custom_state=state)
+                rewards.append(reward)
+                results.append((t, td, reward))
     env.close()
 
     results = np.array(results)
@@ -64,14 +67,14 @@ def experimento_controle():
     print(f"\nMelhores parâmetros encontrados:")
     print(f"ângulo = {best_params[0]}, velocidade angular = {best_params[1]} --> recompensa média = {best_params[2]}")
 
-    plot_results(results=results, exp='exp_controle', name=f'controle')
+    plot_results(results=results, exp='exp_controle', name='controle')
 
     return results, best_index, best_params
 
 def experimento_1_n_episodios():
     """Variação do numero de episódios"""
     env = PendulumEnv()
-    policy = Policy()
+    policy = Policy(input_size=3)
     episodios = [2, 5, 10, 15, 20,50]
     state_reward = []
 
@@ -96,7 +99,7 @@ def experimento_1_n_episodios():
 def experimento_2_duracao():
     """Variação da duração do episódio."""
     env = PendulumEnv()
-    policy = Policy()
+    policy = Policy(input_size=3)
     duracao = [50, 100, 200, 300, 400, 500]
     state_reward = []
 
@@ -130,7 +133,7 @@ def experimento_3_ruido():
 def experimento_4_condicoes():
     """Variação das condições iniciais."""
     env = PendulumEnv()
-    policy = Policy()
+    policy = Policy(input_size=3)
     interval_ranges = [[(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-2.0, 2.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-1.0, 1.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-3.0, 3.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.15, 0.15), (-3.0, 3.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.1, 0.1), (-3.0, 3.0)]]
 
     for r in interval_ranges:
@@ -288,11 +291,11 @@ def plot_results_umbounded(results, exp, name):
 
 
 def run_all_experimentos():
-    # experimento_controle()
-    experimento_1_n_episodios()
-    experimento_2_duracao()
+    experimento_controle()
+    # experimento_1_n_episodios()
+    # experimento_2_duracao()
     # experimento_3_ruido()
-    experimento_4_condicoes()
+    # experimento_4_condicoes()
     # experimento_5_fitness()
     # experimento_6_pesos()
 

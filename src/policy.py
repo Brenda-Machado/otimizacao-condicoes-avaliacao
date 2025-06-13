@@ -8,21 +8,21 @@ import numpy as np
 import time
 
 class Policy:
-    def __init__(self, input_size=4, maxsteps=500):
-        self.weights = np.random.randn(input_size)
+    def __init__(self, input_size=1, maxsteps=500):
+        self.input_size = input_size
+        self.weights = np.random.randn(self.input_size)
         self.bias = np.random.randn()
         self.maxsteps = maxsteps
         self.state_reward = []
 
     def perceptron(self, obs):
-
         output = np.dot(self.weights, obs) + self.bias
         return 1 if output > 0 else 0
 
     def get_action(self, obs):
         return self.perceptron(obs)
 
-    def rollout(self, env, ntrials=1, render=False, seed=None, custom_maxsteps=None, custom_state=None, wheights=[0,1,0]):
+    def rollout(self, env, ntrials=1, render=False, seed=None, custom_maxsteps=None, custom_bounds= None, custom_state=None, wheights=[0,1,0]):
         total_rew = 0.0
         total_steps = 0
         self.state_reward = []
@@ -36,10 +36,12 @@ class Policy:
 
         for trial in range(ntrials):
             if custom_state is not None:
-                obs, _ = env.reset_custom(custom_bounds=custom_state)
+                obs, _ = env.reset_custom(custom_state=custom_state)
+            if custom_bounds is not None:
+                obs, _ = env.reset_custom(custom_bounds=custom_bounds)
             else:
                 obs, _ = env.reset()
-
+            
             rew = 0.0
             t = 0
 

@@ -173,20 +173,17 @@ class PendulumEnv(gym.Env):
             self.render()
         return self._get_obs(), {}
     
-    def reset_custom(self, *, seed: Optional[int] = None, options: Optional[dict] = None, custom_bounds):
+    def reset_custom(self, *, seed: Optional[int] = None, options: Optional[dict] = None, custom_bounds = None, custom_state = None):
         super().reset(seed=seed)
-        if options is None:
-            high = np.array([DEFAULT_X, DEFAULT_Y])
-        else:
-            # Note that if you use custom reset bounds, it may lead to out-of-bound
-            # state/observations.
-            x = options.get("x_init") if "x_init" in options else DEFAULT_X
-            y = options.get("y_init") if "y_init" in options else DEFAULT_Y
-            x = utils.verify_number_and_cast(x)
-            y = utils.verify_number_and_cast(y)
-            high = np.array([x, y])
-        low = -high  # We enforce symmetric limits.
-        self.state = self.np_random.uniform(low=low, high=high)
+
+        if custom_bounds is not None:
+            low = np.array([b[0] for b in custom_bounds])
+            high = np.array([b[1] for b in custom_bounds])
+            self.state = self.np_random.uniform(low=low, high=high)
+            
+        elif custom_state is not None:
+            self.state = custom_state
+
         self.last_u = None
 
         if self.render_mode == "human":
