@@ -132,7 +132,9 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         assert self.action_space.contains(action), err_msg
         assert self.state is not None, "Call reset before using step method."
         x, x_dot, theta, theta_dot = self.state
-        force = self.force_mag if action == 1 else -self.force_mag
+        noise_std = 1.0 # ADIÇÂO DE RUIDO
+        motor_noise = np.random.uniform(-noise_std, noise_std)
+        force = (self.force_mag if action == 1 else -self.force_mag) + motor_noise
         costheta = math.cos(theta)
         sintheta = math.sin(theta)
 

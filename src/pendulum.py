@@ -135,10 +135,13 @@ class PendulumEnv(gym.Env):
         dt = self.dt
 
         # u = np.clip(u, -self.max_torque, self.max_torque)[0]
-        self.last_u = u  # for rendering
+        noise_std = 0.1  # ajuste conforme necessário
+        motor_noise = np.random.uniform(-noise_std, noise_std)
+        u_noisy = u + motor_noise
+        self.last_u = u_noisy
         costs = angle_normalize(th) ** 2 + 0.1 * thdot**2 + 0.001 * (u**2)
 
-        newthdot = thdot + (3 * g / (2 * l) * np.sin(th) + 3.0 / (m * l**2) * u) * dt
+        newthdot = thdot + (3 * g / (2 * l) * np.sin(th) + 3.0 / (m * l**2) * u_noisy) * dt
         newthdot = np.clip(newthdot, -self.max_speed, self.max_speed)
         newth = th + newthdot * dt
         # newth = np.clip(th + newthdot * dt, -3, 3)

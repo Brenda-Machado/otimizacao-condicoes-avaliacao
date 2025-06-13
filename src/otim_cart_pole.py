@@ -138,7 +138,7 @@ def experimento_1_n_episodios():
         print(f"Experimento 1: n_episodes = {ep}")
         state_reward = []
         for i in range(ep):
-            recompensa, steps, episode_data = policy.rollout_cp(env=env, ntrials=1)
+            recompensa, steps, episode_data = policy.rollout(env=env, ntrials=1)
             state_reward.extend(episode_data)
             print(f"Episódio {i+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
             
@@ -164,7 +164,7 @@ def experimento_2_duracao():
         state_reward = []
 
         for e in range(10):
-            recompensa, steps, episode_data = policy.rollout_cp(env=env, custom_maxsteps=d)
+            recompensa, steps, episode_data = policy.rollout(env=env, custom_maxsteps=d)
             state_reward.extend(episode_data)
 
             print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
@@ -197,7 +197,7 @@ def experimento_4_condicoes():
         state_reward = []
 
         for e in range(10):
-            recompensa, steps, episode_data = policy.rollout_cp(env=env,custom_state=r)
+            recompensa, steps, episode_data = policy.rollout(env=env,custom_state=r)
             state_reward.extend(episode_data)
 
             print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
