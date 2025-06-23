@@ -49,27 +49,24 @@ def experimento_controle():
     theta = np.linspace(-3, 3, num=int((3 - (-3)) / step) + 1)
     theta_dot = np.linspace(-0.2, 0.2, num=int((0.2 - (-0.2)) / step) + 1)
 
-    rewards = []
-
     for t in tqdm(theta, desc="Exp Controle"):
         for td in theta_dot:
             for i in range(10):
-                state = np.array([t,td])
-                reward, steps, episode_data = policy.rollout(env=env, ntrials=1,custom_state=state)
-                rewards.append(reward)
-                results.append((t, td, reward))
+                state = [t,td]
+                reward, _, state_reward = policy.rollout(env=env, ntrials=1,custom_state=state)
+                results.extend(state_reward)
     env.close()
 
     results = np.array(results)
-    best_index = np.argmax(results[:, 2])
-    best_params = results[best_index]
+    # best_index = np.argmax(results[:, 2])
+    # best_params = results[best_index]
 
-    print(f"\nMelhores parâmetros encontrados:")
-    print(f"ângulo = {best_params[0]}, velocidade angular = {best_params[1]} --> recompensa média = {best_params[2]}")
+    # print(f"\nMelhores parâmetros encontrados:")
+    # print(f"ângulo = {best_params[0]}, velocidade angular = {best_params[1]} --> recompensa média = {best_params[2]}")
 
     plot_results(results=results, exp='exp_controle', name='controle')
 
-    return results, best_index, best_params
+    return results#, best_index, best_params
 
 def experimento_1_n_episodios():
     """Variação do numero de episódios"""
@@ -253,14 +250,14 @@ def plot_results(results, exp, name):
 
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(X, Y, Z, cmap='viridis')
+    ax.plot_trisurf(X, Y, Z, cmap='Blues')
 
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
 
-    ax.set_xlim(-3, 3)
-    ax.set_ylim(-0.2, 0.2)
+    # ax.set_xlim(-3, 3)
+    # ax.set_ylim(-0.2, 0.2)
 
     save_dir = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/plots/pendulum/{exp}')
     os.makedirs(save_dir, exist_ok=True)
@@ -276,7 +273,7 @@ def plot_results_umbounded(results, exp, name):
 
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(X, Y, Z, cmap='viridis')
+    ax.plot_trisurf(X, Y, Z, cmap='Blues')
 
     ax.set_xlabel('X')
     ax.set_ylabel('Y')

@@ -99,33 +99,24 @@ def run_episode_exp_pesos(env, param1, param2, max_steps=500, noise_range=None, 
     return states_rewards
 
 def experimento_controle():
-    """Variação do numero de episódios"""
+    """Combinação de condições"""
     step = 0.025
     results = []
-    env = gym.make('CartPole-v1')
-    pos = 0
-    vel = 0
-    ang = np.linspace(-0.2, 0.2, num=int((0.2 - (-0.2)) / step) + 1)
-    ang_vel = np.linspace(-3, 3, num=int((3 - (-3)) / step) + 1)
+    env = CartPoleEnv()
+    policy = Policy(input_size=4)
+    theta = np.linspace(-3, 3, num=int((3 - (-3)) / step) + 1)
+    theta_dot = np.linspace(-0.2, 0.2, num=int((0.2 - (-0.2)) / step) + 1)
 
-    rewards = []
-
-    for a in tqdm(ang, desc="ângulo"):
-        for av in ang_vel:
-            state = [pos, vel, a, av]
-            reward = run_episode(env, 0.25, 0.25, custom_state=state)
-            rewards.append(reward)
-            results.append((a, av, reward))
+    for t in tqdm(theta, desc="Exp Controle"):
+        for td in theta_dot:
+            for i in range(10):
+                state = [td,t]
+                reward, _, state_reward = policy.rollout(env=env, ntrials=1,custom_state=state)
+                results.extend(state_reward)
     env.close()
 
     results = np.array(results)
-    best_index = np.argmax(results[:, 2])
-    best_params = results[best_index]
-
-    print(f"\nMelhores parâmetros encontrados:")
-    print(f"ângulo = {best_params[0]}, velocidade angular = {best_params[1]} --> recompensa média = {best_params[2]}")
-
-    return results, best_index, best_params
+    plot_results(results=results, exp='exp_controle', name='controle')
 
 def experimento_1_n_episodios():
     """Variação do numero de episódios"""
@@ -154,7 +145,7 @@ def experimento_1_n_episodios():
 
 def experimento_2_duracao():
     """Variação da duração do episódio."""
-    env = gym.make("CartPole-v1")
+    env = CartPoleEnv()
     policy = Policy()
     duracao = [50, 100, 200, 300, 400, 500]
     state_reward = []
@@ -305,23 +296,24 @@ def otim_weights_action_func(param_range):
 def plot_results(results, exp, name):
     X = results[:, 0] # eixo X: ângulo
     Y = results[:, 1] # eixo Y: velocidade angular
-    Z = results[:, 2] # eixo Z: Fitness     
+    Z = results[:, 2] # eixo Z: Fitness   
 
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_trisurf(X, Y, Z, cmap='viridis')
 
-    ax.set_xlabel('Ângulo (a)')
-    ax.set_ylabel('Velocidade Angular (av)')
-    ax.set_zlabel('Recompensa Média')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
 
-    ax.set_xlim(-0.2, 0.2)
-    ax.set_ylim(-3, 3)
+    # ax.set_xlim(-0.2, 0.2)
+    # ax.set_ylim(-3, 3)
 
     save_dir = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/plots/cartpole/{exp}')
     os.makedirs(save_dir, exist_ok=True)
 
     save_path = os.path.join(save_dir, f'{name}.png')
+    plt.show()
     plt.savefig(save_path)
 
 def plot_results_umbounded(results, exp, name):
@@ -341,14 +333,16 @@ def plot_results_umbounded(results, exp, name):
     os.makedirs(save_dir, exist_ok=True)
 
     save_path = os.path.join(save_dir, f'{name}.png')
+    plt.show()
     plt.savefig(save_path)
 
 
 def run_all_experimentos():
+    experimento_controle()
     # experimento_1_n_episodios()
     # experimento_2_duracao()
     # experimento_3_ruido()
-    experimento_4_condicoes()
+    # experimento_4_condicoes()
     # experimento_5_fitness()
     # experimento_6_pesos()
 

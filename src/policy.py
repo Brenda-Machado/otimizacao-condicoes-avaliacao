@@ -50,7 +50,8 @@ class Policy:
                 obs, r, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
                 x, y = obs[0], obs[1]
-                self.state_reward.append((float(x), float(y), float(r)))
+                # self.state_reward.append((float(x), float(y), float(r)))
+                self.state_reward.append((round(float(x), 2), round(float(y), 2), round(float(r), 2)))
                 rew += r
                 t += 1
 

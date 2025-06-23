@@ -213,19 +213,20 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         *,
         seed: Optional[int] = None,
         options: Optional[dict] = None,
-        custom_bounds
+        custom_bounds = None, custom_state = None
     ):
         super().reset(seed=seed)
         # Note that if you use custom reset bounds, it may lead to out-of-bound
         # state/observations.
-        bounds = custom_bounds
+        if custom_bounds is not None:
+            low = np.array([b[0] for b in custom_bounds])
+            high = np.array([b[1] for b in custom_bounds])
+            self.state = self.np_random.uniform(low=low, high=high)
 
-        # Separar em vetores low e high
-        low = np.array([b[0] for b in bounds])
-        high = np.array([b[1] for b in bounds])
-
-        self.state = self.np_random.uniform(low=low, high=high)
-
+        elif custom_state is not None:
+            x,y = custom_state
+            self.state = [0, 0, x, y]
+            
         self.steps_beyond_terminated = None
 
         if self.render_mode == "human":

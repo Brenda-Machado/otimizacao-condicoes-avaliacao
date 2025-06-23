@@ -120,14 +120,14 @@ class PendulumEnv(gym.Env):
         )
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 
-    def step(self, u=1, state_custom=None):
+    def step(self, u, state_custom=None):
         th, thdot = self.state  # th := theta
 
-        if state_custom is not None:
-            th, thdot = state_custom
-            self.state = state_custom
-            costs = angle_normalize(th) ** 2 + 0.1 * thdot**2 + 0.001 * (u**2)
-            return self._get_obs(), -costs, False, False, {}
+        # if state_custom is not None:
+        #     th, thdot = state_custom
+        #     self.state = state_custom
+        #     costs = angle_normalize(th) ** 2 + 0.1 * thdot**2 + 0.001 * (u**2)
+        #     return self._get_obs(), -costs, False, False, {}
 
         g = self.g
         m = self.m
@@ -180,9 +180,10 @@ class PendulumEnv(gym.Env):
             low = np.array([b[0] for b in custom_bounds])
             high = np.array([b[1] for b in custom_bounds])
             self.state = self.np_random.uniform(low=low, high=high)
-            
+
         elif custom_state is not None:
-            self.state = custom_state
+            x, y = custom_state
+            self.state = np.array([x, y])
 
         self.last_u = None
 
