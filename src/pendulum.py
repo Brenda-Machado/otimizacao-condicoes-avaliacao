@@ -120,7 +120,7 @@ class PendulumEnv(gym.Env):
         )
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 
-    def step(self, u, state_custom=None):
+    def step(self, u, custom_noise=0.1):
         th, thdot = self.state  # th := theta
 
         # if state_custom is not None:
@@ -135,7 +135,7 @@ class PendulumEnv(gym.Env):
         dt = self.dt
 
         # u = np.clip(u, -self.max_torque, self.max_torque)[0]
-        noise_std = 0.1  # ajuste conforme necessário
+        noise_std = custom_noise  # ajuste conforme necessário
         motor_noise = np.random.uniform(-noise_std, noise_std)
         u_noisy = u + motor_noise
         self.last_u = u_noisy
@@ -177,8 +177,9 @@ class PendulumEnv(gym.Env):
         super().reset(seed=seed)
 
         if custom_bounds is not None:
-            low = np.array([b[0] for b in custom_bounds])
-            high = np.array([b[1] for b in custom_bounds])
+            x, y = custom_bounds
+            high = np.array([x, y])
+            low = -high
             self.state = self.np_random.uniform(low=low, high=high)
 
         elif custom_state is not None:
