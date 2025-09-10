@@ -33,85 +33,72 @@ def run_episode(env, param1, param2, max_steps=500, noise_range=None, custom_sta
             break
     return total_reward
 
-def collect_initial_states_fitness(env, policy, n_episodes, **kwargs):
-    """Função auxiliar para coletar (theta_inicial, theta_dot_inicial, fitness)"""
+def collect_initial_states_fitness(env, policy, n_episodes=10, **kwargs):
     results = []
     
     for episode in range(n_episodes):
         obs, _ = env.reset()
-        
-        # Aplicar configurações customizadas se existirem
         if 'custom_state' in kwargs and kwargs['custom_state'] is not None:
             env.unwrapped.state = np.array(kwargs['custom_state'])
             obs = np.array(kwargs['custom_state'])
         elif 'custom_bounds' in kwargs and kwargs['custom_bounds'] is not None:
-            # Reset com bounds customizados
             obs, _ = env.reset_custom(custom_bounds=kwargs['custom_bounds'])
-        
-        # Capturar estado inicial (theta, theta_dot)
+
         initial_theta = obs[2]
         initial_theta_dot = obs[3]
-        
-        # Executar episódio
-        total_steps = 0
+
+        total_reward = 0
         for step in range(kwargs.get('max_steps', 500)):
             action = policy.get_action(obs)
-            
-            # Aplicar ruído se especificado
             custom_noise = kwargs.get('custom_noise', 0.1)
             obs, reward, terminated, truncated, _ = env.step(action, custom_noise)
-            total_steps += 1
+            total_reward += reward
             
             if terminated or truncated:
                 break
         
-        # Fitness = duração do episódio
-        fitness = total_steps
-        
-        # Armazenar (theta_inicial, theta_dot_inicial, fitness)
+        fitness = total_reward
         results.append((initial_theta, initial_theta_dot, fitness))
     
     return results
 
 def experimento_controle():
-    """Combinação de condições iniciais - CORRIGIDO"""
-    step = 0.02  # Resolução ajustada
+    """Combinação de condições iniciais"""
+    step = 0.1  # Resolução ajustada
     results = []
     env = CartPoleEnv()
     policy = Policy(input_size=4)
     
-    # CORREÇÃO: Ranges válidos
     theta_range = np.arange(-0.15, 0.16, step)      # ±8.6° (dentro do limite)
-    theta_dot_range = np.arange(-2.0, 2.1, step*5)  # Velocidades realistas
+    theta_dot_range = np.arange(-2.0, 2.1, step)  
 
     for theta_val in tqdm(theta_range, desc="Exp Controle"):
         for theta_dot_val in theta_dot_range:
             
             episode_fitness = []
-            for trial in range(3):  # Múltiplas execuções por condição
-                # CORREÇÃO: Estado na ordem correta [cart_pos, cart_vel, pole_angle, pole_ang_vel]
+            for trial in range(5): 
+                # [cart_pos, cart_vel, pole_angle, pole_ang_vel]
                 custom_state = [0.0, 0.0, theta_val, theta_dot_val]
                 
                 trial_results = collect_initial_states_fitness(
-                    env, policy, n_episodes=1, 
+                    env, policy, n_episodes=10, 
                     custom_state=custom_state,
                     max_steps=500,
                     custom_noise=0.1
                 )
                 
                 if trial_results:
-                    episode_fitness.append(trial_results[0][2])  # fitness
+                    episode_fitness.append(trial_results[0][2])  
             
             if episode_fitness:
                 avg_fitness = np.mean(episode_fitness)
-                # Salvar como (theta_inicial, theta_dot_inicial, fitness_medio)
+                # (theta_inicial, theta_dot_inicial, fitness_medio)
                 results.append((theta_val, theta_dot_val, avg_fitness))
     
     env.close()
 
     results = np.array(results)
     
-    # Salvar dados
     path = os.path.expanduser('~/otimizacao-condicoes-avaliacao/data/cartpole/exp_controle/fitness_landscape.npy')
     os.makedirs(os.path.dirname(path), exist_ok=True)
     np.save(path, results)
@@ -119,7 +106,7 @@ def experimento_controle():
     plot_results(results=results, exp='exp_controle', name='controle')
 
 def experimento_1_n_episodios():
-    """Variação do número de episódios - CORRIGIDO"""
+    """Variação do número de episódios"""
     env = CartPoleEnv()
     policy = Policy(input_size=4)
     episodios = [2, 5, 10, 15, 20, 50]
@@ -127,7 +114,6 @@ def experimento_1_n_episodios():
     for ep in episodios:
         print(f"Experimento 1: n_episodes = {ep}")
         
-        # CORREÇÃO: Coletar estados iniciais vs fitness
         results = collect_initial_states_fitness(
             env, policy, n_episodes=ep,
             max_steps=500,
@@ -136,7 +122,7 @@ def experimento_1_n_episodios():
 
         for i, (theta, theta_dot, fitness) in enumerate(results):
             print(f"Episódio {i+1} | Theta inicial: {theta:.3f} | Fitness: {fitness}")
-            
+                
         env.close()
         results = np.array(results)
 
@@ -147,7 +133,7 @@ def experimento_1_n_episodios():
         plot_results(results=results, exp='exp_1', name=f'ep_{ep}')
 
 def experimento_2_duracao():
-    """Variação da duração do episódio - CORRIGIDO"""
+    """Variação da duração do episódio"""
     env = CartPoleEnv()
     policy = Policy(input_size=4)
     duracao = [50, 100, 200, 300, 400, 500]
@@ -155,10 +141,9 @@ def experimento_2_duracao():
     for d in duracao:
         print(f"Experimento 2: maxsteps = {d}")
         
-        # CORREÇÃO: Coletar estados iniciais vs fitness
         results = collect_initial_states_fitness(
             env, policy, n_episodes=10,
-            max_steps=d,  # Variação da duração
+            max_steps=d,  
             custom_noise=0.1
         )
 
@@ -176,19 +161,18 @@ def experimento_2_duracao():
         plot_results(results=results, exp='exp_2', name=name)
 
 def experimento_3_ruido():
-    """Variação do ruído na ação - CORRIGIDO"""
+    """Variação do ruído na ação"""
     env = CartPoleEnv()
     policy = Policy(input_size=4)
     noise = [0.001, 0.01, 0.05, 0.1, 0.5, 1]
 
     for n in noise:
         print(f"Experimento 3: noise = {n}")
-        
-        # CORREÇÃO: Coletar estados iniciais vs fitness
+
         results = collect_initial_states_fitness(
             env, policy, n_episodes=10,
             max_steps=500,
-            custom_noise=n  # Variação do ruído
+            custom_noise=n 
         )
 
         for i, (theta, theta_dot, fitness) in enumerate(results):
@@ -205,17 +189,16 @@ def experimento_3_ruido():
         plot_results(results=results, exp='exp_3', name=name)
 
 def experimento_4_condicoes():
-    """Variação das condições iniciais - CORRIGIDO"""
+    """Variação das condições iniciais"""
     env = CartPoleEnv()
     policy = Policy(input_size=4)
-    interval_ranges_theta = [0.05, 0.1, 0.15]       # CORREÇÃO: Valores realistas para theta
-    interval_ranges_theta_dot = [0.5, 1.0, 2.0]     # CORREÇÃO: Valores realistas para theta_dot
+    interval_ranges_theta = [0.05, 0.1, 0.15]      
+    interval_ranges_theta_dot = [0.5, 1.0, 2.0]    
 
     for t in interval_ranges_theta:
         for td in interval_ranges_theta_dot:
             print(f"Experimento 4: ranges = theta±{t}, theta_dot±{td}")
             
-            # CORREÇÃO: Coletar estados iniciais vs fitness
             results = collect_initial_states_fitness(
                 env, policy, n_episodes=10,
                 max_steps=500,
@@ -243,13 +226,11 @@ def experimento_5_fitness():
     env = CartPoleEnv()
     policy = Policy(input_size=4)
     
-    # Diferentes formas de calcular fitness
     fitness_methods = ['mean', 'min', 'max', 'median', 'std']
     
     for method in fitness_methods:
         print(f"Experimento 5: fitness_method = {method}")
         
-        # Coletar múltiplos episódios para cada estado inicial
         all_results = []
         
         for ep in range(10):
@@ -317,9 +298,9 @@ def experimento_6_pesos():
         all_results = []
         
         # Gerar diferentes estados iniciais
-        for trial in range(20):
+        for trial in range(5):
             episode_results = collect_initial_states_fitness(
-                env, policy, n_episodes=5,  # 5 episódios por estado inicial
+                env, policy, n_episodes=10,  # 5 episódios por estado inicial
                 max_steps=500,
                 custom_noise=0.1
             )
@@ -358,6 +339,25 @@ def experimento_6_pesos():
         plot_results(results=results, exp='exp_6', name=name)
 
 # def plot_results(results, exp, name):
+#     X = results[:, 0] # eixo X: ângulo
+#     Y = results[:, 1] # eixo Y: velocidade angular
+#     Z = results[:, 2] # eixo Z: Fitness   
+
+#     fig = plt.figure(figsize=(12, 8))
+#     ax = fig.add_subplot(111, projection='3d')
+#     ax.plot_trisurf(X, Y, Z, cmap='viridis')
+
+#     ax.set_xlabel('X')
+#     ax.set_ylabel('Y')
+#     ax.set_zlabel('Z')
+
+#     save_dir = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/plots/cartpole/{exp}')
+#     os.makedirs(save_dir, exist_ok=True)
+
+#     save_path = os.path.join(save_dir, f'{name}.png')
+#     plt.savefig(save_path)
+
+# def plot_results(results, exp, name):
     # """Mantém a função de plot original para compatibilidade"""
     # X = results[:, 0]  # eixo X: theta (ângulo inicial)
     # Y = results[:, 1]  # eixo Y: theta_dot (velocidade angular inicial)
@@ -383,57 +383,42 @@ def experimento_6_pesos():
     # print(f"Fitness - Min: {np.min(Z):.2f}, Max: {np.max(Z):.2f}, Média: {np.mean(Z):.2f}")
 
 def plot_results(results, exp, name):
-    """Função de plot robusta que lida com diferentes quantidades de dados"""
     X = results[:, 0]  # eixo X: theta (ângulo inicial)
     Y = results[:, 1]  # eixo Y: theta_dot (velocidade angular inicial)
     Z = results[:, 2]  # eixo Z: Fitness   
 
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
-    
-    # Verificar se há dados suficientes para diferentes tipos de plot
     n_points = len(X)
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
     
     if n_points < 3:
-        # Poucos pontos: usar scatter plot
         scatter = ax.scatter(X, Y, Z, c=Z, cmap='viridis', s=100, alpha=0.8)
-        plt.colorbar(scatter, ax=ax, label='Fitness')
-        print(f"Usando scatter plot (apenas {n_points} pontos)")
+        # plt.colorbar(scatter, ax=ax, label='Fitness')
         
     elif n_points < 10:
-        # Poucos pontos: usar scatter + linhas conectoras
         scatter = ax.scatter(X, Y, Z, c=Z, cmap='viridis', s=80, alpha=0.8)
-        
-        # Tentar trisurf se possível
+
         try:
             ax.plot_trisurf(X, Y, Z, cmap='viridis', alpha=0.3)
         except:
-            # Se trisurf falhar, usar apenas scatter
             pass
         
-        plt.colorbar(scatter, ax=ax, label='Fitness')
-        print(f"Usando scatter + trisurf (apenas {n_points} pontos)")
+        # plt.colorbar(scatter, ax=ax, label='Fitness')
         
     else:
-        # Muitos pontos: usar trisurf normalmente
         surf = ax.plot_trisurf(X, Y, Z, cmap='viridis', alpha=0.8)
-        plt.colorbar(surf, ax=ax, label='Fitness')
-        print(f"Usando trisurf ({n_points} pontos)")
-
-    ax.set_xlabel('Theta - Ângulo Inicial (rad)')
-    ax.set_ylabel('Theta_dot - Vel. Angular Inicial (rad/s)')
-    ax.set_zlabel('Fitness (Duração)')
-    ax.set_title(f'Fitness Landscape - {exp}/{name}\n({n_points} pontos de dados)')
+        # plt.colorbar(surf, ax=ax, label='Fitness')
 
     save_dir = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/plots/cartpole/{exp}')
     os.makedirs(save_dir, exist_ok=True)
 
     save_path = os.path.join(save_dir, f'{name}.png')
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.close()  # Fechar figura para economizar memória
-    
-    # Imprimir estatísticas
-    print(f"Fitness - Min: {np.min(Z):.2f}, Max: {np.max(Z):.2f}, Média: {np.mean(Z):.2f}")
+    plt.close()  
 
 def run_all_experimentos():
     """Executa todos os experimentos corrigidos"""

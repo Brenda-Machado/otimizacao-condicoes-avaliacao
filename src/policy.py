@@ -14,6 +14,7 @@ class Policy:
         self.bias = np.random.randn()
         self.maxsteps = maxsteps
         self.state_reward = []
+        self.noise = 0.1
 
     def perceptron(self, obs):
         output = np.dot(self.weights, obs) + self.bias
@@ -22,7 +23,7 @@ class Policy:
     def get_action(self, obs):
         return self.perceptron(obs)
 
-    def rollout(self, env, ntrials=1, render=False, seed=None, custom_maxsteps=None, custom_bounds= None, custom_state=None, wheights=[0,1,0]):
+    def rollout(self, env, ntrials=1, render=False, seed=None, custom_maxsteps=None, custom_bounds= None, custom_state=None, custom_noise=None, wheights=[0,1,0]):
         total_rew = 0.0
         total_steps = 0
         self.state_reward = []
@@ -33,6 +34,8 @@ class Policy:
         if seed is not None:
             np.random.seed(seed)
             env.reset(seed=seed)
+        if custom_noise is not None:
+            self.noise = custom_noise
 
         for trial in range(ntrials):
             if custom_state is not None:
@@ -47,7 +50,7 @@ class Policy:
 
             while t < self.maxsteps:
                 action = self.get_action(obs)
-                obs, r, terminated, truncated, _ = env.step(action)
+                obs, r, terminated, truncated, _ = env.step(action,self.noise)
                 done = terminated or truncated
                 x, y = obs[0], obs[1]
                 # self.state_reward.append((float(x), float(y), float(r)))

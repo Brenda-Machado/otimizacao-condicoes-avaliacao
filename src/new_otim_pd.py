@@ -30,33 +30,26 @@ import os
 from pendulum import PendulumEnv
 
 def collect_initial_states_fitness_pendulum(env, policy, n_episodes, **kwargs):
-    """Função auxiliar para coletar (theta_inicial, theta_dot_inicial, fitness) no Pendulum"""
     results = []
     
     for episode in range(n_episodes):
         obs, _ = env.reset()
-        
-        # Aplicar configurações customizadas se existirem
+
         if 'custom_state' in kwargs and kwargs['custom_state'] is not None:
             env.unwrapped.state = np.array(kwargs['custom_state'])
-            obs = env._get_obs()  # Recalcular observação após mudança de estado
+            obs = env._get_obs() 
         elif 'custom_bounds' in kwargs and kwargs['custom_bounds'] is not None:
-            # Reset com bounds customizados
             obs, _ = env.reset_custom(custom_bounds=kwargs['custom_bounds'])
         
-        # Capturar estado inicial (theta, theta_dot) do estado interno
-        initial_theta = env.unwrapped.state[0]      # Ângulo
-        initial_theta_dot = env.unwrapped.state[1]  # Velocidade angular
-        
-        # Executar episódio
+        initial_theta = obs[0]
+        initial_theta_dot = obs[1]
+
         total_reward = 0
         for step in range(kwargs.get('max_steps', 500)):
             action = policy.get_action(obs)
-            
-            # Aplicar ruído se especificado
             if 'custom_noise' in kwargs:
                 action = action + np.random.normal(0, kwargs['custom_noise'])
-                action = np.clip(action, -2.0, 2.0)  # Limites da ação do Pendulum
+                action = np.clip(action, -2.0, 2.0) 
             
             obs, reward, terminated, truncated, _ = env.step(action)
             total_reward += reward
@@ -64,31 +57,27 @@ def collect_initial_states_fitness_pendulum(env, policy, n_episodes, **kwargs):
             if terminated or truncated:
                 break
         
-        # Fitness = recompensa total (mais negativa = pior)
         fitness = total_reward
-        
-        # Armazenar (theta_inicial, theta_dot_inicial, fitness)
         results.append((initial_theta, initial_theta_dot, fitness))
     
     return results
 
 def experimento_controle():
-    """Combinação de condições iniciais - CORRIGIDO"""
-    step = 0.15  # Resolução ajustada
+    """Combinação de condições iniciais"""
+    step = 0.1  
     results = []
     env = PendulumEnv()
     policy = Policy(input_size=3)
-    
-    # CORREÇÃO: Ranges válidos para Pendulum
-    theta_range = np.arange(-np.pi, np.pi + step, step)     # Ângulo completo [-π, π]
-    theta_dot_range = np.arange(-8.0, 8.1, step*4)         # Velocidades realistas
+
+    theta_range = np.arange(-np.pi, np.pi + step, step)     
+    theta_dot_range = np.arange(-1.0, 1.0 + step, step)        
 
     for theta_val in tqdm(theta_range, desc="Exp Controle"):
         for theta_dot_val in theta_dot_range:
             
             episode_fitness = []
-            for trial in range(3):  # Múltiplas execuções por condição
-                # Estado inicial: [theta, theta_dot]
+            for trial in range(5): 
+                # [theta, theta_dot]
                 custom_state = [theta_val, theta_dot_val]
                 
                 trial_results = collect_initial_states_fitness_pendulum(
@@ -99,18 +88,17 @@ def experimento_controle():
                 )
                 
                 if trial_results:
-                    episode_fitness.append(trial_results[0][2])  # fitness
+                    episode_fitness.append(trial_results[0][2]) 
             
             if episode_fitness:
                 avg_fitness = np.mean(episode_fitness)
-                # Salvar como (theta_inicial, theta_dot_inicial, fitness_medio)
+                # (theta_inicial, theta_dot_inicial, fitness_medio)
                 results.append((theta_val, theta_dot_val, avg_fitness))
     
     env.close()
 
     results = np.array(results)
-    
-    # Salvar dados
+
     path = os.path.expanduser('~/otimizacao-condicoes-avaliacao/data/pendulum/exp_controle/fitness_landscape.npy')
     os.makedirs(os.path.dirname(path), exist_ok=True)
     np.save(path, results)
@@ -118,7 +106,7 @@ def experimento_controle():
     plot_results(results=results, exp='exp_controle', name='controle')
 
 def experimento_1_n_episodios():
-    """Variação do número de episódios - CORRIGIDO"""
+    """Variação do número de episódios"""
     env = PendulumEnv()
     policy = Policy(input_size=3)
     episodios = [2, 5, 10, 15, 20, 50]
@@ -126,7 +114,6 @@ def experimento_1_n_episodios():
     for ep in episodios:
         print(f"Experimento 1: n_episodes = {ep}")
         
-        # CORREÇÃO: Coletar estados iniciais vs fitness
         results = collect_initial_states_fitness_pendulum(
             env, policy, n_episodes=ep,
             max_steps=500,
@@ -146,7 +133,7 @@ def experimento_1_n_episodios():
         plot_results(results=results, exp='exp_1', name=f'ep_{ep}')
 
 def experimento_2_duracao():
-    """Variação da duração do episódio - CORRIGIDO"""
+    """Variação da duração do episódio"""
     env = PendulumEnv()
     policy = Policy(input_size=3)
     duracao = [50, 100, 200, 300, 400, 500]
@@ -154,10 +141,9 @@ def experimento_2_duracao():
     for d in duracao:
         print(f"Experimento 2: maxsteps = {d}")
         
-        # CORREÇÃO: Coletar estados iniciais vs fitness
         results = collect_initial_states_fitness_pendulum(
             env, policy, n_episodes=10,
-            max_steps=d,  # Variação da duração
+            max_steps=d,  
             custom_noise=0.1
         )
 
@@ -175,7 +161,7 @@ def experimento_2_duracao():
         plot_results(results=results, exp='exp_2', name=name)
 
 def experimento_3_ruido():
-    """Variação do ruído na ação - CORRIGIDO"""
+    """Variação do ruído na ação"""
     env = PendulumEnv()
     policy = Policy(input_size=3)
     noise = [0.001, 0.01, 0.05, 0.1, 0.5, 1]
@@ -183,11 +169,10 @@ def experimento_3_ruido():
     for n in noise:
         print(f"Experimento 3: noise = {n}")
         
-        # CORREÇÃO: Coletar estados iniciais vs fitness
         results = collect_initial_states_fitness_pendulum(
             env, policy, n_episodes=10,
             max_steps=500,
-            custom_noise=n  # Variação do ruído
+            custom_noise=n  
         )
 
         for i, (theta, theta_dot, fitness) in enumerate(results):
@@ -204,19 +189,16 @@ def experimento_3_ruido():
         plot_results(results=results, exp='exp_3', name=name)
 
 def experimento_4_condicoes():
-    """Variação das condições iniciais - CORRIGIDO"""
+    """Variação das condições iniciais"""
     env = PendulumEnv()
     policy = Policy(input_size=3)
-    
-    # CORREÇÃO: Ranges mais realistas para Pendulum
-    interval_ranges_theta = [np.pi/4, np.pi/2, np.pi]      # π/4, π/2, π radianos
-    interval_ranges_theta_dot = [2.0, 4.0, 8.0]            # Velocidades realistas
+    interval_ranges_theta = [np.pi/4, np.pi/2, np.pi]      
+    interval_ranges_theta_dot = [2.0, 4.0, 8.0]            
 
     for t in interval_ranges_theta:
         for td in interval_ranges_theta_dot:
             print(f"Experimento 4: ranges = theta±{t:.2f}, theta_dot±{td}")
             
-            # CORREÇÃO: Coletar estados iniciais vs fitness
             results = collect_initial_states_fitness_pendulum(
                 env, policy, n_episodes=10,
                 max_steps=500,
@@ -360,58 +342,43 @@ def experimento_6_pesos():
         plot_results(results=results, exp='exp_6', name=name)
 
 def plot_results(results, exp, name):
-    """Função de plot robusta que lida com diferentes quantidades de dados"""
     X = results[:, 0]  # eixo X: theta (ângulo inicial)
     Y = results[:, 1]  # eixo Y: theta_dot (velocidade angular inicial)
     Z = results[:, 2]  # eixo Z: Fitness   
 
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
-    
-    # Verificar se há dados suficientes para diferentes tipos de plot
     n_points = len(X)
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
     
     if n_points < 3:
-        # Poucos pontos: usar scatter plot
         scatter = ax.scatter(X, Y, Z, c=Z, cmap='Blues', s=100, alpha=0.8)
-        plt.colorbar(scatter, ax=ax, label='Fitness')
-        print(f"Usando scatter plot (apenas {n_points} pontos)")
+        # plt.colorbar(scatter, ax=ax, label='Fitness')
         
     elif n_points < 10:
-        # Poucos pontos: usar scatter + linhas conectoras
         scatter = ax.scatter(X, Y, Z, c=Z, cmap='Blues', s=80, alpha=0.8)
         
-        # Tentar trisurf se possível
         try:
             ax.plot_trisurf(X, Y, Z, cmap='Blues', alpha=0.3)
         except:
-            # Se trisurf falhar, usar apenas scatter
             pass
         
-        plt.colorbar(scatter, ax=ax, label='Fitness')
-        print(f"Usando scatter + trisurf (apenas {n_points} pontos)")
+        # plt.colorbar(scatter, ax=ax, label='Fitness')
         
     else:
-        # Muitos pontos: usar trisurf normalmente
         surf = ax.plot_trisurf(X, Y, Z, cmap='Blues', alpha=0.8)
-        plt.colorbar(surf, ax=ax, label='Fitness')
-        print(f"Usando trisurf ({n_points} pontos)")
-
-    ax.set_xlabel('Theta - Ângulo Inicial (rad)')
-    ax.set_ylabel('Theta_dot - Vel. Angular Inicial (rad/s)')
-    ax.set_zlabel('Fitness (Recompensa Total)')
-    ax.set_title(f'Fitness Landscape - {exp}/{name}\n({n_points} pontos de dados)')
+        # plt.colorbar(surf, ax=ax, label='Fitness')
 
     save_dir = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/plots/pendulum/{exp}')
     os.makedirs(save_dir, exist_ok=True)
 
     save_path = os.path.join(save_dir, f'{name}.png')
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.close()  # Fechar figura para economizar memória
+    plt.close() 
     
-    # Imprimir estatísticas
-    print(f"Fitness - Min: {np.min(Z):.2f}, Max: {np.max(Z):.2f}, Média: {np.mean(Z):.2f}")
-
 def run_all_experimentos():
     """Executa todos os experimentos corrigidos"""
     
