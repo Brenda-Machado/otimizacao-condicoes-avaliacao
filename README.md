@@ -2,7 +2,7 @@
 
 Este repositório contém a implementação de funções de otimização de condições para os ambientes de controle robótico CartPolev-1 e PendulumV-1 [1].
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org)
 
 ## Documentação
@@ -29,15 +29,16 @@ Conforme descrito na seção 3. Metodologia do TCC, diversos experimentos foram 
 
 ## Autores
 
-- [Brenda Machado](https://www.github.com/Brenda-Machado)
+- [Brenda Machado](https://www.github.com/Brenda-Machado).
 
 ## Referências principais de implementação
 
-[1] - [Gymnasium - Farama Foundation](https://github.com/Farama-Foundation/Gymnasium)
+[1] - [Gymnasium - Farama Foundation](https://github.com/Farama-Foundation/Gymnasium);
+[2] - [Evorobotpy2](https://github.com/snolfi/evorobotpy2).
 
 ## Citação
 
-Trabalho de Conclusão de Curso de Ciência da Computação na Universidade Federal de Santa Catarina.
+Trabalho de Conclusão de Curso em Ciências da Computação na Universidade Federal de Santa Catarina.
 
 ```bibtex
 @article{otimizacaoCondicoesAvaliacao2025,
