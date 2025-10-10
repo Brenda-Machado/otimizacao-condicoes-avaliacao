@@ -1,4 +1,3 @@
-
 """
 Comparison between baseline e adaptive algorithm
 Author: Brenda Silva Machado
