@@ -11,6 +11,9 @@ cp: venv/bin/activate
 pen:venv/bin/activate
 	 ./venv/bin/python3 src/otim_pendulum.py
 
+run_opt: venv/bin/activate
+	 ./venv/bin/python3 src/adaptive_experiment_optimizer.py
+
 clean:
 	 rm -rf __pycache__
 	 rm -rf venv

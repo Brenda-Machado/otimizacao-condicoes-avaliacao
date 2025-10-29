@@ -28,50 +28,31 @@ from tqdm import tqdm
 import os
 from pendulum import PendulumEnv
 
-def run_episode(env, param1, param2, max_steps=500, noise_range=None, custom_state=None):
-    obs, _ = env.reset()
-    total_reward = 0
-    
-    for i in range(max_steps):
-        obs, reward, terminated, truncated, _ = env.step(custom_state)
-        total_reward += reward
-        if terminated or truncated:
-            break
-    return total_reward
 
 def experimento_controle():
     """Combinação de condições"""
     step = 0.025
     results = []
     env = PendulumEnv()
+    policy = Policy(input_size=3)
     theta = np.linspace(-3, 3, num=int((3 - (-3)) / step) + 1)
     theta_dot = np.linspace(-0.2, 0.2, num=int((0.2 - (-0.2)) / step) + 1)
 
-    rewards = []
-
-    for t in tqdm(theta, desc="Theta"):
+    for t in tqdm(theta, desc="Exp Controle"):
         for td in theta_dot:
-            state = np.array([t,td])
-            reward = run_episode(env, 0.25, 0.25, custom_state=state)
-            rewards.append(reward)
-            results.append((t, td, reward))
+            for i in range(10):
+                state = [t,td]
+                reward, _, state_reward = policy.rollout(env=env, ntrials=1,custom_state=state)
+                results.extend(state_reward)
     env.close()
 
     results = np.array(results)
-    best_index = np.argmax(results[:, 2])
-    best_params = results[best_index]
-
-    print(f"\nMelhores parâmetros encontrados:")
-    print(f"ângulo = {best_params[0]}, velocidade angular = {best_params[1]} --> recompensa média = {best_params[2]}")
-
-    plot_results(results=results, exp='exp_controle', name=f'controle')
-
-    return results, best_index, best_params
+    plot_results(results=results, exp='exp_controle', name='controle')
 
 def experimento_1_n_episodios():
     """Variação do numero de episódios"""
     env = PendulumEnv()
-    policy = Policy()
+    policy = Policy(input_size=3)
     episodios = [2, 5, 10, 15, 20,50]
     state_reward = []
 
@@ -79,8 +60,9 @@ def experimento_1_n_episodios():
         print(f"Experimento 1: n_episodes = {ep}")
         state_reward = []
         for i in range(ep):
-            recompensa, steps, episode_data = policy.rollout_pendulum(env=env, ntrials=1)
+            recompensa, steps, episode_data = policy.rollout(env=env, ntrials=1)
             state_reward.extend(episode_data)
+
             print(f"Episódio {i+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
             
         env.close()
@@ -91,12 +73,11 @@ def experimento_1_n_episodios():
         np.save(path, state_reward)
 
         plot_results(results=results, exp='exp_1', name=f'ep_{ep}')
-        plot_results_umbounded(results=results, exp='exp_1', name=f'ep_{ep}_unb')
 
 def experimento_2_duracao():
     """Variação da duração do episódio."""
     env = PendulumEnv()
-    policy = Policy()
+    policy = Policy(input_size=3)
     duracao = [50, 100, 200, 300, 400, 500]
     state_reward = []
 
@@ -105,7 +86,7 @@ def experimento_2_duracao():
         state_reward = []
 
         for e in range(10):
-            recompensa, steps, episode_data = policy.rollout_pendulum(env=env, custom_maxsteps=d)
+            recompensa, steps, episode_data = policy.rollout(env=env, custom_maxsteps=d)
             state_reward.extend(episode_data)
 
             print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
@@ -118,59 +99,22 @@ def experimento_2_duracao():
         np.save(path, state_reward)
 
         name = 'mstep_' + str(d)
-        name_unb = 'mstep_' + str(d) + '_unb'
 
         plot_results(results=results, exp='exp_2', name=name)
-        plot_results_umbounded(results=results, exp='exp_2', name=name_unb)
 
 def experimento_3_ruido():
     """Variação do ruído na ação."""
-    pass
-
-def experimento_4_condicoes():
-    """Variação das condições iniciais."""
     env = PendulumEnv()
-    policy = Policy()
-    interval_ranges = [[(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-2.0, 2.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-1.0, 1.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.2, 0.2), (-3.0, 3.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.15, 0.15), (-3.0, 3.0)], [(-0.05, 0.05), (-0.05, 0.05), (-0.1, 0.1), (-3.0, 3.0)]]
-
-    for r in interval_ranges:
-        print(f"Experimento 4: ranges = {r}")
-        state_reward = []
-
-        for e in range(10):
-            recompensa, steps, episode_data = policy.rollout_pendulum(env=env,custom_state=r)
-            state_reward.extend(episode_data)
-
-            print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
-
-        env.close()
-        results = np.array(state_reward)
-
-        ranges = str(r[2][1]) + "_" + str((r[3][1]))
-
-        path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/pendulum/exp_4/states_rewards_r_{ranges}.npy')
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        np.save(path, state_reward)
-
-        name = 'ranges_' + ranges
-        name_unb = 'ranges_' + ranges + '_unb'
-
-        plot_results(results=results, exp='exp_4', name=name)
-        plot_results_umbounded(results=results, exp='exp_4', name=name_unb)
-
-def experimento_5_fitness():
-    """Fitness com pesos sobre min, mean e max."""
-    env = gym.make("CartPole-v1")
-    policy = Policy()
-    pesos = [()]
+    policy = Policy(input_size=3)
+    noise = [0.001, 0.01, 0.05, 0.1, 0.5, 1]
     state_reward = []
 
-    for p in pesos:
-        print(f"Experimento 5: pesos = {p}")
+    for n in noise:
+        print(f"Experimento 3: noise = {n}")
         state_reward = []
 
         for e in range(10):
-            recompensa, steps, episode_data = policy.rollout(env=env, custom_maxsteps=d)
+            recompensa, steps, episode_data = policy.rollout(env=env, custom_noise=n)
             state_reward.extend(episode_data)
 
             print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
@@ -178,120 +122,155 @@ def experimento_5_fitness():
         env.close()
         results = np.array(state_reward)
 
-        path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/cartpole/exp_5/states_rewards_d_{p}.npy')
+        path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/pendulum/exp_3/states_rewards_n_{str(n)}.npy')
         os.makedirs(os.path.dirname(path), exist_ok=True)
         np.save(path, state_reward)
 
-        name = 'pesos_' + str(p)
-        name_unb = 'pesos_' + str(p) + '_unb'
+        name = 'noise_' + str(n)
 
-        plot_results(results=results, exp='exp_5', name=name)
-        plot_results_umbounded(results=results, exp='exp_5', name=name_unb)
+        plot_results(results=results, exp='exp_3', name=name)
 
-def experimento_6_pesos():
-    env = gym.make('CartPole-v1')
-    rewards = [run_episode(env, param1, param2) for _ in range(n_episodios)]
-    env.close()
+def experimento_4_condicoes():
+    """Variação das condições iniciais."""
+    env = PendulumEnv()
+    policy = Policy(input_size=3)
+    interval_ranges_theta = [3,2,1]
+    interval_ranges_theta_dot = [1.5,0.5,0.2]
 
-    min_r = np.min(rewards)
-    mean_r = np.mean(rewards)
-    max_r = np.max(rewards)
+    for t in interval_ranges_theta:
+        for td in interval_ranges_theta_dot:
+            print(f"Experimento 4: ranges = {(t,td)}")
+            state_reward = []
 
-    w_min, w_mean, w_max = pesos
-    fitness_final = w_min * min_r + w_mean * mean_r + w_max * max_r
-    return fitness_final
+            for e in range(10):
+                recompensa, steps, episode_data = policy.rollout(env=env,custom_bounds=(t,td))
+                state_reward.extend(episode_data)
+
+                print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
+
+            env.close()
+            results = np.array(state_reward)
+
+            ranges = str(t) + "_" + str(td)
+
+            path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/pendulum/exp_4/states_rewards_r_{ranges}.npy')
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            np.save(path, state_reward)
+
+            name = 'ranges_' + ranges
+
+            plot_results(results=results, exp='exp_4', name=name)
+
+# def experimento_5_fitness():
+#     """Fitness com pesos sobre min, mean e max."""
+#     env = gym.make("CartPole-v1")
+#     policy = Policy()
+#     pesos = [()]
+#     state_reward = []
+
+#     for p in pesos:
+#         print(f"Experimento 5: pesos = {p}")
+#         state_reward = []
+
+#         for e in range(10):
+#             recompensa, steps, episode_data = policy.rollout(env=env, custom_maxsteps=d)
+#             state_reward.extend(episode_data)
+
+#             print(f"Episódio {e+1} | Recompensa: {recompensa:.2f} | Passos: {steps}")
+                
+#         env.close()
+#         results = np.array(state_reward)
+
+#         path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/cartpole/exp_5/states_rewards_d_{p}.npy')
+#         os.makedirs(os.path.dirname(path), exist_ok=True)
+#         np.save(path, state_reward)
+
+#         name = 'pesos_' + str(p)
+#         name_unb = 'pesos_' + str(p) + '_unb'
+
+#         plot_results(results=results, exp='exp_5', name=name)
+#         plot_results_umbounded(results=results, exp='exp_5', name=name_unb)
+
+# def experimento_6_pesos():
+#     env = gym.make('CartPole-v1')
+#     rewards = [run_episode(env, param1, param2) for _ in range(n_episodios)]
+#     env.close()
+
+#     min_r = np.min(rewards)
+#     mean_r = np.mean(rewards)
+#     max_r = np.max(rewards)
+
+#     w_min, w_mean, w_max = pesos
+#     fitness_final = w_min * min_r + w_mean * mean_r + w_max * max_r
+#     return fitness_final
 
 
-def otim_weights_action_func(param_range):
-    env = gym.make('CartPole-v1')
+# def otim_weights_action_func(param_range):
+#     env = gym.make('CartPole-v1')
 
-    param_range = np.arange(param_range)
-    results = []
+#     param_range = np.arange(param_range)
+#     results = []
 
-    for param1 in tqdm(param_range, desc="Varredura param1"):
-        for param2 in param_range:
-            total_reward = 0
-            episodes = 5 
+#     for param1 in tqdm(param_range, desc="Varredura param1"):
+#         for param2 in param_range:
+#             total_reward = 0
+#             episodes = 5 
 
-            print(f"\nTestando parâmetros: param1={param1:.3f}, param2={param2:.3f}") 
+#             print(f"\nTestando parâmetros: param1={param1:.3f}, param2={param2:.3f}") 
 
-            for _ in range(episodes):
-                obs, _ = env.reset()
-                done = False
-                ep_reward = 0
+#             for _ in range(episodes):
+#                 obs, _ = env.reset()
+#                 done = False
+#                 ep_reward = 0
 
-                while not done:
-                    action = get_action(obs, param1, param2)
-                    obs, reward, terminated, truncated, _ = env.step(action)
-                    ep_reward += reward
-                    done = terminated or truncated
+#                 while not done:
+#                     action = get_action(obs, param1, param2)
+#                     obs, reward, terminated, truncated, _ = env.step(action)
+#                     ep_reward += reward
+#                     done = terminated or truncated
 
-                total_reward += ep_reward
+#                 total_reward += ep_reward
 
-            avg_reward = total_reward / episodes
-            results.append((param1, param2, avg_reward))
+#             avg_reward = total_reward / episodes
+#             results.append((param1, param2, avg_reward))
 
-    env.close()
+#     env.close()
 
-    results = np.array(results)
-    best_index = np.argmax(results[:, 2])
-    best_params = results[best_index]
+#     results = np.array(results)
+#     best_index = np.argmax(results[:, 2])
+#     best_params = results[best_index]
 
-    print(f"\nMelhores parâmetros encontrados:")
-    print(f"param1 = {best_params[0]}, param2 = {best_params[1]} --> recompensa média = {best_params[2]}")
+#     print(f"\nMelhores parâmetros encontrados:")
+#     print(f"param1 = {best_params[0]}, param2 = {best_params[1]} --> recompensa média = {best_params[2]}")
 
-    return results, best_index, best_params
+#     return results, best_index, best_params
 
 
 def plot_results(results, exp, name):
-    X = results[:, 0] # eixo X: ângulo
-    Y = results[:, 1] # eixo Y: velocidade angular
-    Z = results[:, 2] # eixo Z: Fitness     
+    X = results[:, 0] 
+    Y = results[:, 1] 
+    Z = results[:, 2]      
 
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(X, Y, Z, cmap='viridis')
+    ax.plot_trisurf(X, Y, Z, cmap='Blues')
 
-    ax.set_xlabel('Ângulo (a)')
-    ax.set_ylabel('Velocidade Angular (av)')
-    ax.set_zlabel('Recompensa Média')
-
-    ax.set_xlim(-3, 3)
-    ax.set_ylim(-0.2, 0.2)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
 
     save_dir = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/plots/pendulum/{exp}')
     os.makedirs(save_dir, exist_ok=True)
 
     save_path = os.path.join(save_dir, f'{name}.png')
-    # plt.show()
-    plt.savefig(save_path)
-
-def plot_results_umbounded(results, exp, name):
-    X = results[:, 0] # eixo X: ângulo
-    Y = results[:, 1] # eixo Y: velocidade angular
-    Z = results[:, 2] # eixo Z: Fitness     
-
-    fig = plt.figure(figsize=(12, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(X, Y, Z, cmap='viridis')
-
-    ax.set_xlabel('Ângulo (a)')
-    ax.set_ylabel('Velocidade Angular (av)')
-    ax.set_zlabel('Recompensa Média')
-
-    save_dir = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/plots/pendulum/{exp}')
-    os.makedirs(save_dir, exist_ok=True)
-
-    save_path = os.path.join(save_dir, f'{name}.png')
-    # plt.show()
     plt.savefig(save_path)
 
 
 def run_all_experimentos():
-    # experimento_controle()
+    experimento_controle()
     experimento_1_n_episodios()
     experimento_2_duracao()
-    # experimento_3_ruido()
+    experimento_3_ruido()
     experimento_4_condicoes()
     # experimento_5_fitness()
     # experimento_6_pesos()

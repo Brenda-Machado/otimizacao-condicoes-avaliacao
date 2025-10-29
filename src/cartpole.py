@@ -127,12 +127,14 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
 
         self.steps_beyond_terminated = None
 
-    def step(self, action):
+    def step(self, action, custom_noise=0.1):
         err_msg = f"{action!r} ({type(action)}) invalid"
         assert self.action_space.contains(action), err_msg
         assert self.state is not None, "Call reset before using step method."
         x, x_dot, theta, theta_dot = self.state
-        force = self.force_mag if action == 1 else -self.force_mag
+        noise_std = custom_noise # ADIÇÂO DE RUIDO
+        motor_noise = np.random.uniform(-noise_std, noise_std)
+        force = (self.force_mag if action == 1 else -self.force_mag) + motor_noise
         costheta = math.cos(theta)
         sintheta = math.sin(theta)
 
@@ -211,19 +213,21 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         *,
         seed: Optional[int] = None,
         options: Optional[dict] = None,
-        custom_bounds
+        custom_bounds = None, custom_state = None
     ):
         super().reset(seed=seed)
         # Note that if you use custom reset bounds, it may lead to out-of-bound
         # state/observations.
-        bounds = custom_bounds
+        if custom_bounds is not None:
+            x, y = custom_bounds
+            high = np.array([0, 0, x, y])
+            low = -high
+            self.state = self.np_random.uniform(low=low, high=high)
 
-        # Separar em vetores low e high
-        low = np.array([b[0] for b in bounds])
-        high = np.array([b[1] for b in bounds])
-
-        self.state = self.np_random.uniform(low=low, high=high)
-
+        elif custom_state is not None:
+            x,y = custom_state
+            self.state = [0, 0, x, y]
+            
         self.steps_beyond_terminated = None
 
         if self.render_mode == "human":
