@@ -105,47 +105,26 @@ def experimento_controle():
 
 def experimento_1_n_episodios():
     """Variação do número de episódios"""
-    step = 0.1
     env = PendulumEnv()
     policy = Policy(input_size=3)
     episodios = [2, 5, 10, 15, 20, 50]
 
-    theta_range = np.arange(-np.pi, np.pi + step, step)     
-    theta_dot_range = np.arange(-1.0, 1.0 + step, step)
-
-    for ep in episodios:
-        print(f"Experimento 1: n_episodes = {ep}")
-        results = []
+    for n_eps in episodios:
+        print(f"\nExperimento 1: n_episodios = {n_eps}")
         
-        for theta_val in tqdm(theta_range, desc=f"Exp 1 - ep {ep}"):
-            for theta_dot_val in theta_dot_range:
-                
-                episode_fitness = []
-                for trial in range(ep): 
-                    custom_state = [theta_val, theta_dot_val]
-                    
-                    trial_results = collect_initial_states_fitness_pendulum(
-                        env, policy, n_episodes=1,
-                        custom_state=custom_state,
-                        max_steps=500,
-                        custom_noise=0.1
-                    )
-                    
-                    if trial_results:
-                        episode_fitness.append(trial_results[0][2])
-                
-                if episode_fitness:
-                    avg_fitness = np.mean(episode_fitness)
-                    results.append((theta_val, theta_dot_val, avg_fitness))
-            
-        env.close()
+        results = collect_initial_states_fitness_pendulum(
+            env, policy, 
+            n_episodes=n_eps,
+            max_steps=500,
+            custom_noise=0.1
+        )
+        
         results = np.array(results)
-
-        path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/pendulum/exp_1/fitness_landscape_ep_{ep}.npy')
+        path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/pendulum/exp_1/fitness_landscape_ep_{n_eps}.npy')
         os.makedirs(os.path.dirname(path), exist_ok=True)
         np.save(path, results)
 
-        plot_results(results=results, exp='exp_1', name=f'ep_{ep}')
+        plot_results(results=results, exp='exp_1', name=f'ep_{n_eps}')
 
 def experimento_2_duracao():
     """Variação da duração do episódio"""
@@ -438,11 +417,11 @@ def plot_results(results, exp, name):
 def run_all_experimentos():
     """Executa todos os experimentos corrigidos"""
     
-    experimento_controle()
+    # experimento_controle()
     experimento_1_n_episodios()
-    experimento_2_duracao()
-    experimento_3_ruido()
-    experimento_4_condicoes()
+    # experimento_2_duracao()
+    # experimento_3_ruido()
+    # experimento_4_condicoes()
     # experimento_5_fitness()
     # experimento_6_pesos()
 
@@ -730,4 +709,4 @@ def run_all_visualizations():
 
 if __name__ == "__main__":
     run_all_experimentos()
-    run_all_visualizations()
+    # run_all_visualizations()
