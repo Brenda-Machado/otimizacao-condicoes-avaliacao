@@ -3,4 +3,4 @@ gymnasium
 matplotlib
 numpy
 tqdm
-torch
+scipy
