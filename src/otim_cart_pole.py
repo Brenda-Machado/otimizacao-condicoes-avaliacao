@@ -116,6 +116,11 @@ def experimento_controle():
     env.close()
 
     results = np.array(results)
+    path = os.path.expanduser('~/otimizacao-condicoes-avaliacao/data/cartpole/exp_controle/controle.npy')
+
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    np.save(path, results)
+
     plot_results(results=results, exp='exp_controle', name='controle')
 
 def experimento_1_n_episodios():

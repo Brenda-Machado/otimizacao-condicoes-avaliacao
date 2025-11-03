@@ -6,13 +6,16 @@ run: venv/bin/activate
 	 ./venv/bin/python3 src/main.py
 
 cp: venv/bin/activate
-	 ./venv/bin/python3 src/otim_cart_pole.py
+	 ./venv/bin/python3 src/new_otim_cp.py
 
 pen:venv/bin/activate
-	 ./venv/bin/python3 src/otim_pendulum.py
+	 ./venv/bin/python3 src/new_otim_pd.py
 
 run_opt: venv/bin/activate
 	 ./venv/bin/python3 src/adaptive_experiment_optimizer.py
+
+teste: venv/bin/activate
+	 ./venv/bin/python3 src/exp_pd_sdq.py
 
 clean:
 	 rm -rf __pycache__
