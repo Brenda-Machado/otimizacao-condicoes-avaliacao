@@ -15,7 +15,7 @@ run_opt: venv/bin/activate
 	 ./venv/bin/python3 src/adaptive_experiment_optimizer.py
 
 teste: venv/bin/activate
-	 ./venv/bin/python3 src/exp_pd_sdq.py
+	 ./venv/bin/python3 src/exp_cp_sdq.py
 
 clean:
 	 rm -rf __pycache__

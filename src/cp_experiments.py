@@ -9,8 +9,11 @@ def load_experiment_data(exp_name, file_pattern):
     file_path = os.path.join(base_path, exp_name, file_pattern)
     
     if os.path.exists(file_path):
-        return np.load(file_path)
-    return None
+        data = np.load(file_path)
+        return data
+    else:
+        print(f"  ⚠️  Arquivo não encontrado: {file_path}")
+        return None
 
 def interpolate_to_grid(data, grid_resolution=50):
     """Interpola dados para uma grade comum"""
@@ -60,21 +63,21 @@ def plot_squared_differences():
     
     # Exp 1: número de episódios
     for ep in [2, 5, 10, 15, 20, 50]:
-        exp_data = load_experiment_data('exp_1', f'fitness_landscape_ep_{ep}.npy')
+        exp_data = load_experiment_data('exp_1', f'states_rewards_ep_{ep}.npy')
         if exp_data is not None:
             diff = calculate_squared_difference(control_data, exp_data)
             exp_categories['Episódios'].append((ep, diff))
     
     # Exp 2: duração
     for d in [50, 100, 200, 300, 400, 500]:
-        exp_data = load_experiment_data('exp_2', f'fitness_landscape_d_{d}.npy')
+        exp_data = load_experiment_data('exp_2', f'states_rewards_d_{d}.npy')
         if exp_data is not None:
             diff = calculate_squared_difference(control_data, exp_data)
             exp_categories['Duração'].append((d, diff))
     
     # Exp 3: ruído
     for n in [0.001, 0.01, 0.05, 0.1, 0.5, 1]:
-        exp_data = load_experiment_data('exp_3', f'fitness_landscape_n_{str(n)}.npy')
+        exp_data = load_experiment_data('exp_3', f'states_rewards_n_{str(n)}.npy')
         if exp_data is not None:
             diff = calculate_squared_difference(control_data, exp_data)
             exp_categories['Ruído'].append((n, diff))
@@ -85,13 +88,13 @@ def plot_squared_differences():
     for t in theta_ranges:
         for td in theta_dot_ranges:
             ranges_str = f"{td}_{t}"
-            exp_data = load_experiment_data('exp_4', f'fitness_landscape_r_{ranges_str}.npy')
+            exp_data = load_experiment_data('exp_4', f'states_rewards_r_{ranges_str}.npy')
             if exp_data is not None:
                 diff = calculate_squared_difference(control_data, exp_data)
                 exp_categories['Cond. Iniciais'].append((f"θ̇={td}, θ={t}", diff))
     
     # Criar figura com subplots
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle('CartPole: Soma das Diferenças Quadráticas vs Experimento Controle', 
                  fontsize=14, fontweight='bold', y=0.995)
     

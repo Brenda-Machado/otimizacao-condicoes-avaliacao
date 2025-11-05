@@ -433,8 +433,8 @@ def plot_results(results, exp, name):
 def run_all_experimentos():
     """Executa todos os experimentos corrigidos"""
     
-    experimento_controle()
-    experimento_1_n_episodios()
+    # experimento_controle()
+    # experimento_1_n_episodios()
     experimento_2_duracao()
     experimento_3_ruido()
     experimento_4_condicoes()

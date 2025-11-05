@@ -109,14 +109,15 @@ def plot_squared_differences():
             ranges_str = f"{t:.2f}_{td}"
             exp_data = load_experiment_data('exp_4', f'fitness_landscape_r_{ranges_str}.npy')
             if exp_data is not None:
-                label = f"θ={t:.2f}, θ̇={td:.1f}"
+                # label = f"θ={t:.2f}, θ̇={td:.1f}"
+                label = fr"$\theta={t:.2f}, \dot{{\theta}}={td:.1f}$"
                 print(f"  {label}: {len(exp_data)} pontos")
                 diff = calculate_squared_difference_aligned(control_data, exp_data)
                 if not np.isnan(diff):
                     exp_categories['Cond. Iniciais'].append((label, diff))
     
     # Criar figura com subplots
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     fig.suptitle('Pendulum: Diferenças Quadráticas Normalizadas vs Experimento Controle', 
                  fontsize=14, fontweight='bold', y=0.995)
     
