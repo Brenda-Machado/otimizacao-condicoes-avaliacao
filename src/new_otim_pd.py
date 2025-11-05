@@ -105,20 +105,32 @@ def experimento_controle():
 
 def experimento_1_n_episodios():
     """Variação do número de episódios"""
+    step = 0.1
     env = PendulumEnv()
     policy = Policy(input_size=3)
     episodios = [2, 5, 10, 15, 20, 50]
 
+    theta_range = np.arange(-np.pi, np.pi + step, step)     
+    theta_dot_range = np.arange(-1.0, 1.0 + step, step)
+
     for n_eps in episodios:
         print(f"\nExperimento 1: n_episodios = {n_eps}")
-        
-        results = collect_initial_states_fitness_pendulum(
-            env, policy, 
-            n_episodes=n_eps,
-            max_steps=500,
-            custom_noise=0.1
-        )
-        
+        results = []
+
+        for theta_val in theta_range:
+            for theta_dot_val in theta_dot_range:
+
+                custom_state = [theta_val, theta_dot_val]
+                trial_results = collect_initial_states_fitness_pendulum(
+                    env, policy, 
+                    n_episodes=n_eps,
+                    max_steps=500,
+                    custom_state=custom_state,
+                    custom_noise=0.1
+                )
+
+                results.append((theta_val, theta_dot_val, trial_results[0][2]))
+                
         results = np.array(results)
         path = os.path.expanduser(f'~/otimizacao-condicoes-avaliacao/data/pendulum/exp_1/fitness_landscape_ep_{n_eps}.npy')
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -392,6 +404,10 @@ def plot_results(results, exp, name):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
+
+    ax.set_xlim([-3.14, 3.14])         
+    ax.set_ylim([-1, 1])      
+    ax.set_zlim([-5000, 0])
     
     if n_points < 3:
         scatter = ax.scatter(X, Y, Z, c=Z, cmap='Blues', s=100, alpha=0.8)
@@ -417,11 +433,11 @@ def plot_results(results, exp, name):
 def run_all_experimentos():
     """Executa todos os experimentos corrigidos"""
     
-    # experimento_controle()
+    experimento_controle()
     experimento_1_n_episodios()
-    # experimento_2_duracao()
-    # experimento_3_ruido()
-    # experimento_4_condicoes()
+    experimento_2_duracao()
+    experimento_3_ruido()
+    experimento_4_condicoes()
     # experimento_5_fitness()
     # experimento_6_pesos()
 
