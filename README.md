@@ -1,9 +1,13 @@
 # Implementação de um algoritmo adaptativo para otimização de condições de avaliação na Robótica Adaptativa
 
-Este repositório contém a implementação de funções de otimização de condições para os ambientes de controle robótico CartPolev-1 e PendulumV-1 [1].
-
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org)
+
+Este repositório contém a implementação de funções de otimização de condições para os ambientes de controle robótico:
++ Série de experimentos que variam as condições ambientais dos ambientes;
++ Funções de plotagem da fitness landscape;
++ Algoritmos evolutivos baseline;
++ Algoritmo adaptativo de condições online baseado em Estratégias de Evolução.
 
 ## Documentação
 
@@ -11,7 +15,7 @@ A documentação completa do projeto está disponível no [Wiki do repositório]
 
 ## Experimentos
 
-Conforme descrito na seção 3. Metodologia do TCC, diversos experimentos foram realizados para otimizar as condições de avaliação nos ambientes testados. Abaixo estão os detalhes dos experimentos realizados:
+Conforme descrito na seção 3. Metodologia do TCC, diversos experimentos foram realizados para otimizar as condições de avaliação nos ambientes testados, [PendulumV-1](https://gymnasium.farama.org/environments/classic_control/pendulum/) e [CartpoleV-0](https://gymnasium.farama.org/environments/classic_control/cart_pole/). Abaixo estão os detalhes dos experimentos realizados:
 
 - **Experimento Controle**: O agente foi treinado com todas as possíveis condições iniciais. O objetivo foi obter uma visão real da fitness, que seria alcançada se fosse possível percorrer todas as condições iniciais para cada agente.
 
