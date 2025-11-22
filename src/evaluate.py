@@ -1,7 +1,9 @@
-
 """
-Comparison between baseline e adaptive algorithm
+Policy Evaluation - Genetic Algorithm
+
 Author: Brenda Silva Machado
+
+evaluate.py
 """
 
 import numpy as np
@@ -12,7 +14,6 @@ from evaluate import optimize_policy
 from adaptative_algo_opt import AdaptiveAlgorithm
 from pendulum import PendulumEnv
 from policy import PendulumPolicy
-
 
 class ExperimentComparison:
     
@@ -40,14 +41,14 @@ class ExperimentComparison:
                 'final_fitness': history[-1]['best_fitness']
             }
             
-            print(f"✓ Baseline carregado de {history_file}")
+            print(f"Baseline carregado de {history_file}")
             print(f"  Fitness final: {history[-1]['best_fitness']:.2f}")
             print(f"  Gerações: {len(history)}")
             
             return True
             
         except Exception as e:
-            print(f"✗ Erro ao carregar baseline: {e}")
+            print(f"Erro ao carregar baseline: {e}")
             return False
     
     def run_adaptive(self, env_class, policy_class, param_bounds, 
@@ -55,9 +56,6 @@ class ExperimentComparison:
                      learning_rate=0.02, noise_std=0.05,
                      name="adaptive", save_prefix="adaptive"):
         
-        print(f"\n{'='*80}")
-        print(f"INICIANDO ALGORITMO ADAPTATIVO")
-        print(f"{'='*80}")
         print(f"GA: {ga_generations} gerações, população={ga_population}")
         print(f"Agente: {agent_generations} gerações OpenAI-ES por avaliação")
         print(f"Parâmetros a adaptar: {list(param_bounds.keys())}")
@@ -71,9 +69,8 @@ class ExperimentComparison:
         
         for gen in range(ga_generations):
             gen_start = time.time()
-            print(f"\n{'─'*80}")
+
             print(f"GA GERAÇÃO {gen}/{ga_generations-1}")
-            print(f"{'─'*80}")
             
             fitness_scores = []
             
@@ -111,7 +108,7 @@ class ExperimentComparison:
                     print(f"    → Fitness: {fitness:.2f} (tempo: {ind_time:.1f}s)")
                     
                 except Exception as e:
-                    print(f"    ✗ ERRO na avaliação: {e}")
+                    print(f"ERRO na avaliação: {e}")
                     fitness_scores.append(-1e6)
             
             result = ga.evolve(fitness_scores)
@@ -123,7 +120,6 @@ class ExperimentComparison:
             gen_time = time.time() - gen_start
             elapsed_total = time.time() - start_time
             
-            print(f"\n{'─'*80}")
             print(f"RESULTADO GA GERAÇÃO {gen}:")
             print(f"  Melhor fitness:  {result['best_fitness']:.2f}")
             print(f"  Fitness médio:   {result['avg_fitness']:.2f}")
@@ -132,13 +128,9 @@ class ExperimentComparison:
             print(f"\n  Melhores parâmetros:")
             for k, v in result['best_params'].items():
                 print(f"    {k}: {v:.4f}")
-            print(f"{'─'*80}")
         
         total_time = time.time() - start_time
         
-        print(f"\n{'='*80}")
-        print(f"ALGORITMO ADAPTATIVO CONCLUÍDO")
-        print(f"{'='*80}")
         print(f"Tempo total: {total_time:.1f}s ({total_time/60:.1f} min)")
         print(f"Melhor fitness alcançado: {ga.best_fitness:.2f}")
         print(f"\nMelhores parâmetros finais:")
@@ -171,41 +163,6 @@ class ExperimentComparison:
                 'best_env_params': env_params,
                 'final_fitness': ga.best_fitness
             }, f)
-        
-        print(f"✓ Resultados salvos:")
-        print(f"  - {prefix}_best_env_params.npy")
-        print(f"  - {prefix}_history.pkl")
-    
-    def print_comparison(self):
-        print(f"\n{'='*80}")
-        print("COMPARAÇÃO DE RESULTADOS")
-        print(f"{'='*80}\n")
-        
-        for name, data in self.results.items():
-            print(f"{name.upper()}:")
-            print(f"  Tipo: {data['type']}")
-            print(f"  Fitness Final: {data['final_fitness']:.2f}")
-            
-            if data['type'] == 'adaptive':
-                print(f"  Tempo total: {data.get('total_time', 0):.1f}s")
-                print(f"  Parâmetros adaptados:")
-                for k, v in data['best_env_params'].items():
-                    print(f"    {k}: {v:.4f}")
-            print()
-
-        if len(self.results) >= 2:
-            fitnesses = {name: data['final_fitness'] for name, data in self.results.items()}
-            best_name = max(fitnesses, key=fitnesses.get)
-            worst_name = min(fitnesses, key=fitnesses.get)
-            
-            improvement = fitnesses[best_name] - fitnesses[worst_name]
-            improvement_pct = (improvement / abs(fitnesses[worst_name])) * 100
-            
-            print(f"{'='*80}")
-            print(f"MELHOR ABORDAGEM: {best_name.upper()}")
-            print(f"Melhoria absoluta: {improvement:.2f}")
-            print(f"Melhoria relativa: {improvement_pct:.1f}%")
-            print(f"{'='*80}")
     
     def plot_fitness_comparison(self, save_path=None):
         fig, axes = plt.subplots(1, 2, figsize=(15, 5))
@@ -252,12 +209,12 @@ class ExperimentComparison:
     
     def plot_param_evolution(self, adaptive_name='adaptive', save_path=None):
         if adaptive_name not in self.results:
-            print(f"Resultado '{adaptive_name}' não encontrado!")
+            print(f"Resultado '{adaptive_name}' não encontrado.")
             return
         
         data = self.results[adaptive_name]
         if data['type'] != 'adaptive':
-            print(f"'{adaptive_name}' não é um experimento adaptativo!")
+            print(f"'{adaptive_name}' não é um experimento adaptativo.")
             return
         
         param_evolution = data['param_evolution']
@@ -287,34 +244,7 @@ class ExperimentComparison:
         
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        plt.show()
-    
-    def print_param_statistics(self, adaptive_name='adaptive'):
-        if adaptive_name not in self.results:
-            print(f"Estatísticas não disponíveis para '{adaptive_name}'")
-            return
-        
-        data = self.results[adaptive_name]
-        if data['type'] != 'adaptive':
-            return
-        
-        param_evolution = data['param_evolution']
-        
-        print(f"\n{'='*80}")
-        print(f"ESTATÍSTICAS DE VARIAÇÃO DOS PARÂMETROS ({adaptive_name})")
-        print(f"{'='*80}\n")
-        
-        for param_name, values in param_evolution.items():
-            print(f"{param_name}:")
-            print(f"  Inicial:  {values[0]:.4f}")
-            print(f"  Final:    {values[-1]:.4f}")
-            print(f"  Média:    {np.mean(values):.4f} ± {np.std(values):.4f}")
-            print(f"  Range:    [{np.min(values):.4f}, {np.max(values):.4f}]")
-            print(f"  Variação: {np.max(values) - np.min(values):.4f}")
-            cv = np.std(values) / np.mean(values) if np.mean(values) != 0 else 0
-            print(f"  Coef.Var: {cv:.4f}")
-            print()
-
+        plt.show()   
 
 if __name__ == "__main__":
     comparison = ExperimentComparison()
@@ -346,8 +276,5 @@ if __name__ == "__main__":
         save_prefix="adaptive_pendulum"
     )
 
-    
-    comparison.print_comparison()
-    comparison.print_param_statistics('adaptive_ga')
     comparison.plot_fitness_comparison(save_path='fitness_comparison.png')
     comparison.plot_param_evolution('adaptive_ga', save_path='param_evolution.png')

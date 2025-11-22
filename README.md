@@ -29,6 +29,7 @@ Conforme descrito na seção 3. Metodologia do TCC, diversos experimentos foram 
 
 ## Como rodar a aplicação?
 
+5. Otimizar baseline utilizando [IRACE](https://github.com/MLopez-Ibanez/irace):
 
 
 ## Autores
