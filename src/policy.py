@@ -2,8 +2,7 @@
 
 Author: Brenda Silva Machado.
 
-Policy
-
+policy.py
 """
 
 import numpy as np
