@@ -44,21 +44,29 @@ Conforme descrito na seção 3. Metodologia do TCC, diversos experimentos foram 
    ```
 
 3. Rodar os experimentos:
+
     Para rodar a evolução do baseline e do algortimo adaptativo, 10 seeds por padrão, execute:
+    
     ```bash
    make run
    ```
 
 4. Rodar experimentos:
+
     Para rodar os experimentos das condições de avaliação, execute, no caso do Pendulum:
+
     ```bash
    make opt_pen
    ```
+
    Ou, no caso do CartPole:
+
     ```bash
    make opt_cp
    ```
+
 5. Otimizar baseline utilizando [IRACE](https://github.com/MLopez-Ibanez/irace):
+
     ```bash
    make opt_irace
    ```
