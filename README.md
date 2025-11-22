@@ -11,7 +11,7 @@ Este repositório contém a implementação de funções de otimização de cond
 
 ## Documentação
 
-A documentação completa do projeto está disponível no [Wiki do repositório](https://github.com/Brenda-Machado/otimizacao-condicoes-avaliacao/wiki).
+A documentação completa do projeto está disponível no [Relatório de TCC]().
 
 ## Experimentos
 
@@ -27,18 +27,13 @@ Conforme descrito na seção 3. Metodologia do TCC, diversos experimentos foram 
 
 - **Experimento 4**: Alteração do intervalo das condições iniciais, com valores aleatórios dentro do intervalo [x, y].
 
-- **Experimento 5**: Avaliação do peso da fitness de cada episódio avaliativo, considerando a maior e a menor fitness como a final, ao invés da média padrão.
+## Como rodar a aplicação?
 
-- **Experimento 6**: Modificação do peso das componentes da fitness, atribuindo um valor entre 0 e 1 para o impacto de cada componente (maior, média, e menor) na fitness final.
+
 
 ## Autores
 
-- [Brenda Machado](https://www.github.com/Brenda-Machado).
-
-## Referências principais de implementação
-
-[1] - [Gymnasium - Farama Foundation](https://github.com/Farama-Foundation/Gymnasium);
-[2] - [Evorobotpy2](https://github.com/snolfi/evorobotpy2).
+- [Brenda Silva Machado](https://www.github.com/Brenda-Machado).
 
 ## Citação
 
@@ -48,6 +43,6 @@ Trabalho de Conclusão de Curso em Ciências da Computação na Universidade Fed
 @article{otimizacaoCondicoesAvaliacao2025,
   title={Implementação de um algoritmo adaptativo para otimização de condições de avaliação na Robótica Adaptativa},
   author={Machado, Brenda},
-  journal={...},
+  journal={..},
   year={2025}
 }
