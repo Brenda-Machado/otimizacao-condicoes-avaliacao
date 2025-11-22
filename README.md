@@ -29,8 +29,47 @@ Conforme descrito na seção 3. Metodologia do TCC, diversos experimentos foram 
 
 ## Como rodar a aplicação?
 
+1. Clonar o repositório:
+
+   Clone o repositório para a sua máquina local:
+
+   ```bash
+   git clone https://github.com/Brenda-Machado/otimizacao-condicoes-avaliacao.git
+   cd otimizacao-condicoes-avaliacao
+   ```
+
+2. Criar e ativar o ambiente virtual:
+   ```bash
+   make venv/bin/activate
+   ```
+
+3. Rodar os experimentos:
+
+    Para rodar a evolução do baseline e do algortimo adaptativo, 10 seeds por padrão, execute:
+    
+    ```bash
+   make run
+   ```
+
+4. Rodar experimentos:
+
+    Para rodar os experimentos das condições de avaliação, execute, no caso do Pendulum:
+
+    ```bash
+   make opt_pen
+   ```
+
+   Ou, no caso do CartPole:
+
+    ```bash
+   make opt_cp
+   ```
+
 5. Otimizar baseline utilizando [IRACE](https://github.com/MLopez-Ibanez/irace):
 
+    ```bash
+   make opt_irace
+   ```
 
 ## Autores
 
